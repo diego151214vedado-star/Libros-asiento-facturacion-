@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Generador de iconos SiFa</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0A0A0F; color: #EEE; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 24px; padding: 32px; }
+  canvas { border-radius: 22%; box-shadow: 0 8px 40px rgba(99,102,241,.4); }
+  .btn { background: #6366F1; color: white; border: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: 600; }
+  .btn:hover { background: #4F46E5; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; color: #6366F1; }
+  .row { display: flex; gap: 40px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .col { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  p { font-size: 13px; color: #666; max-width: 500px; text-align: center; line-height: 1.7; }
+</style>
+</head>
+<body>
+<h1>GENERADOR DE ICONOS SiFa</h1>
+<p>Haz clic en cada botón para descargar el icono. Luego sube ambos archivos a la raíz de tu repositorio en GitHub junto con <code>manifest.json</code> y <code>sw.js</code>.</p>
+
+<div class="row">
+  <div class="col">
+    <canvas id="c512" width="512" height="512"></canvas>
+    <button class="btn" onclick="download('c512','icon-512.png')">⬇ Descargar icon-512.png</button>
+  </div>
+  <div class="col">
+    <canvas id="c192" width="192" height="192"></canvas>
+    <button class="btn" onclick="download('c192','icon-192.png')">⬇ Descargar icon-192.png</button>
+  </div>
+</div>
+
+<script>
+function drawIcon(canvasId, size) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const s = size;
+  const r = s * 0.18; // border radius
+
+  // Fondo redondeado oscuro
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(s - r, 0);
+  ctx.quadraticCurveTo(s, 0, s, r);
+  ctx.lineTo(s, s - r);
+  ctx.quadraticCurveTo(s, s, s - r, s);
+  ctx.lineTo(r, s);
+  ctx.quadraticCurveTo(0, s, 0, s - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+
+  // Gradiente de fondo
+  const bg = ctx.createLinearGradient(0, 0, s, s);
+  bg.addColorStop(0, '#0D0D1A');
+  bg.addColorStop(1, '#12121F');
+  ctx.fillStyle = bg;
+  ctx.fill();
+
+  // Texto SiFa
+  ctx.fillStyle = '#EEEEF2';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Fuente bold condensada
+  const fontSize = s * 0.46;
+  ctx.font = `900 ${fontSize}px 'Arial Narrow', 'Impact', 'Arial Black', sans-serif`;
+  ctx.letterSpacing = s * 0.02 + 'px';
+
+  // Sombra suave
+  ctx.shadowColor = 'rgba(99,102,241,0.3)';
+  ctx.shadowBlur = s * 0.08;
+
+  ctx.fillText('SiFa', s / 2, s / 2);
+
+  // Línea decorativa inferior
+  ctx.shadowBlur = 0;
+  const lineY = s * 0.72;
+  const lineW = s * 0.35;
+  const lineGrad = ctx.createLinearGradient(s/2 - lineW/2, lineY, s/2 + lineW/2, lineY);
+  lineGrad.addColorStop(0, 'transparent');
+  lineGrad.addColorStop(0.3, '#6366F1');
+  lineGrad.addColorStop(0.7, '#0EA5E9');
+  lineGrad.addColorStop(1, 'transparent');
+  ctx.strokeStyle = lineGrad;
+  ctx.lineWidth = s * 0.012;
+  ctx.beginPath();
+  ctx.moveTo(s/2 - lineW/2, lineY);
+  ctx.lineTo(s/2 + lineW/2, lineY);
+  ctx.stroke();
+
+  // Punto acento superior derecha
+  const dotGrad = ctx.createRadialGradient(s*0.78, s*0.22, 0, s*0.78, s*0.22, s*0.04);
+  dotGrad.addColorStop(0, '#6366F1');
+  dotGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = dotGrad;
+  ctx.beginPath();
+  ctx.arc(s*0.78, s*0.22, s*0.04, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function download(canvasId, filename) {
+  const canvas = document.getElementById(canvasId);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+drawIcon('c512', 512);
+drawIcon('c192', 192);
+</script>
+</body>
+</html>
