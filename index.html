@@ -100,61 +100,41 @@
   .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text2); margin-bottom: 16px; }
   @media (max-width: 600px) { main { padding: 16px; } .form-row { grid-template-columns: 1fr; } .modal { padding: 24px; } .page-title { font-size: 28px; } }
 
-/* EMPRESA SELECTOR */
-#empresaSelector {
-  position: fixed; inset: 0; background: #0E0E12;
-  display: none; align-items: center; justify-content: center;
-  z-index: 9999; flex-direction: column; gap: 32px;
-  overflow-y: auto; padding: 40px 20px;
-}
-#empresaSelector.visible { display: flex; }
-#empresaSelector h1 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px; letter-spacing: 3px;
-  color: #EEEEF2; text-align: center; line-height: 1.1;
-}
-.empresa-cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 1000px; }
+/* EMPRESA CARDS (usadas en section-empresas) */
 .empresa-card {
-  background: #16161C; border: 2px solid #2E2E3A;
-  border-radius: 20px; padding: 28px 32px;
+  background: var(--surface); border: 2px solid #2A2A38;
+  border-radius: 20px; padding: 24px 28px;
   cursor: pointer; transition: all .2s;
-  text-align: center; min-width: 220px; max-width: 280px;
+  text-align: center; min-width: 200px; max-width: 260px;
   position: relative;
 }
-.empresa-card:hover { transform: translateY(-4px); }
-.empresa-card img { width: 110px; height: 70px; object-fit: contain; margin-bottom: 12px; }
-.empresa-card .emp-name { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; color: #F0F0EE; margin-bottom: 4px; }
-.empresa-card .emp-sub { font-size: 10px; color: #9090A0; line-height: 1.5; }
-.emp-badge { display: inline-block; margin-top: 10px; padding: 3px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+.empresa-card:hover { transform: translateY(-3px); }
+.empresa-card img { width: 100px; height: 66px; object-fit: contain; margin-bottom: 12px; }
+.empresa-card .emp-name { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px; color: #EEEEF2; margin-bottom: 4px; }
+.empresa-card .emp-sub { font-size: 10px; color: #8888A0; line-height: 1.5; }
+.emp-badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; }
 .empresa-card .emp-edit-btn {
-  position: absolute; top: 10px; right: 10px;
+  position: absolute; top: 8px; right: 8px;
   background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
-  color: #9090A0; border-radius: 6px; padding: 3px 8px; font-size: 11px;
+  color: #8888A0; border-radius: 6px; padding: 3px 8px; font-size: 10px;
   cursor: pointer; opacity: 0; transition: opacity .2s;
 }
 .empresa-card:hover .emp-edit-btn { opacity: 1; }
 .emp-add-card {
-  background: #16161C; border: 2px dashed #2E2E3A;
-  border-radius: 20px; padding: 28px 32px;
+  background: var(--surface); border: 2px dashed #2A2A38;
+  border-radius: 20px; padding: 24px 28px;
   cursor: pointer; transition: all .2s;
-  text-align: center; min-width: 200px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  text-align: center; min-width: 160px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
 }
-.emp-add-card:hover { border-color: var(--red); transform: translateY(-4px); }
-.emp-add-card .emp-add-icon { font-size: 36px; }
-.emp-add-card .emp-add-label { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px; color: #9090A0; }
+.emp-add-card:hover { border-color: var(--red); transform: translateY(-3px); }
+.emp-add-card .emp-add-icon { font-size: 32px; }
+.emp-add-card .emp-add-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 2px; color: #8888A0; }
 </style>
 </head>
 <body>
 
-<div id="empresaSelector" style="display:none">
-  <div style="text-align:center;margin-bottom:8px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:4px;color:#6366F1;margin-bottom:16px">SiFa · Sistema Integral de Facturación y Asientos</div>
-    <h1>¿Con qué empresa quieres trabajar hoy?</h1>
-    <div style="font-size:13px;color:#666;margin-top:10px">Selecciona una empresa o crea una nueva</div>
-  </div>
-  <div class="empresa-cards" id="selectorCards"></div>
-</div>
+
 
 <header>
   <div class="logo">
@@ -259,13 +239,21 @@
     </div>
   </div>
 
-  <!-- EMPRESAS -->
+  <!-- EMPRESAS — pantalla de inicio -->
   <div class="section" id="section-empresas">
-    <div class="page-header">
-      <div><div class="page-title">GESTIÓN DE <span>EMPRESAS</span></div><div class="page-sub">Administra las empresas registradas en SiFa</div></div>
-      <button class="btn btn-primary" onclick="openModal('modalEmpresa')">＋ Nueva Empresa</button>
+    <div style="text-align:center;padding:32px 0 28px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:4px;color:var(--red);margin-bottom:12px">SiFa · Sistema Integral de Facturación y Asientos</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--text)">¿Con qué empresa quieres trabajar hoy?</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:8px">Selecciona una empresa para activarla, o crea una nueva</div>
     </div>
-    <div id="empresasGrid" class="cards-grid"></div>
+    <div id="empresasCards" style="display:flex;flex-wrap:wrap;gap:20px;justify-content:center;margin-bottom:40px"></div>
+    <div style="border-top:1px solid var(--border);padding-top:28px">
+      <div class="page-header">
+        <div><div class="page-title" style="font-size:24px">TODAS LAS <span>EMPRESAS</span></div><div class="page-sub">Detalles y configuración</div></div>
+        <button class="btn btn-primary" onclick="openModal('modalEmpresa')">＋ Nueva Empresa</button>
+      </div>
+      <div id="empresasGrid" class="cards-grid"></div>
+    </div>
   </div>
 
   <div class="section" id="section-invoices">
@@ -700,34 +688,30 @@ function cargarDatosEmpresa(emp) {
 
 // ═══ SELECCIONAR EMPRESA ═══
 function seleccionarEmpresa(key) {
-  const emp = getEmpresa(key);
-  if (!emp) { console.warn('Empresa no encontrada:', key); return; }
-  localStorage.setItem('dal_empresa_actual', key);
+  const emp=getEmpresa(key);
+  if(!emp){ console.warn('Empresa no encontrada:',key); return; }
+  localStorage.setItem('dal_empresa_actual',key);
   cargarDatosEmpresa(emp);
   applyEmpresaTheme(emp);
-  document.getElementById('empresaSelector').classList.remove('visible');
   updateBadges();
-  showSection('empresas');  // arranca en empresas
+  showSection('empresas'); // se queda en empresas, activa resaltada
 }
 
 function seleccionarEmpresaDirecta(key) {
-  const emp = getEmpresa(key);
-  if (!emp) return;
-  localStorage.setItem('dal_empresa_actual', key);
+  const emp=getEmpresa(key); if(!emp) return;
+  localStorage.setItem('dal_empresa_actual',key);
   cargarDatosEmpresa(emp);
   applyEmpresaTheme(emp);
-  document.getElementById('empresaSelector').classList.remove('visible');
   updateBadges();
   showSection('dashboard');
-  toast('Empresa activa: ' + emp.nombre);
+  toast('Empresa activa: '+emp.nombre);
 }
 
 // ═══ TEMA ═══
 // ═══ SELECTOR VISUAL ═══
-function abrirSelectorEmpresas() {
-  rebuildEmpresaSelector();
-  document.getElementById('empresaSelector').classList.add('visible');
-}
+// Ya no hay overlay — el selector ES la sección empresas
+function abrirSelectorEmpresas() { showSection('empresas'); }
+function rebuildEmpresaSelector() { renderEmpresas(); }
 
 // ═══ SAVE ═══
 function save() {
@@ -1450,8 +1434,43 @@ function deleteEmpresa(key) {
 // ── Tarjetas en sección Empresas ──
 function renderEmpresas() {
   const grid=document.getElementById('empresasGrid'); if(!grid) return;
+  const cardsTop=document.getElementById('empresasCards');
   const todas=getTodasEmpresas();
   const actKey=localStorage.getItem('dal_empresa_actual');
+
+  // ── Tarjetas visuales (parte superior) ──
+  if(cardsTop) {
+    if(!Object.keys(todas).length) {
+      cardsTop.innerHTML='';
+    } else {
+      const topHTML=Object.entries(todas).map(([key,emp])=>{
+        const isActiva=key===actKey;
+        const pc=emp.colorPrimary||'#6366F1', sc=emp.colorSecondary||'#0EA5E9', ac=emp.colorAccent||'#22C55E';
+        const logoHTML=emp.logo
+          ?`<img src="${emp.logo}" style="width:100px;height:66px;object-fit:contain;margin-bottom:12px">`
+          :`<div style="width:72px;height:50px;background:linear-gradient(135deg,${pc},${sc});border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:12px">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
+        const dots=`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${pc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${sc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${ac}"></span>`;
+        return `<div class="empresa-card" onclick="seleccionarEmpresaDirecta('${key}')"
+          style="border-color:${isActiva?pc:'#2A2A38'};box-shadow:${isActiva?`0 0 0 2px ${pc}, 0 8px 28px ${pc}33`:'none'}">
+          <button class="emp-edit-btn" onclick="event.stopPropagation();editEmpresaModal('${key}')">✏️ Editar</button>
+          ${logoHTML}
+          <div class="emp-name">${emp.nombre}</div>
+          <div class="emp-sub">${emp.ein||''}<br>${emp.sub||''}</div>
+          <div style="margin-top:10px">${dots}</div>
+          <span class="emp-badge" style="background:${pc}22;color:${pc};margin-top:8px;display:inline-block">
+            ${isActiva?'✓ ACTIVA':emp.nombre.split(' ')[0]}
+          </span>
+        </div>`;
+      }).join('');
+      const addCard=`<div class="emp-add-card" onclick="openModal('modalEmpresa')">
+        <div class="emp-add-icon">➕</div>
+        <div class="emp-add-label">Nueva Empresa</div>
+      </div>`;
+      cardsTop.innerHTML=topHTML+addCard;
+    }
+  }
+
+  // ── Grid detallado (parte inferior) ──
   if(!Object.keys(todas).length){
     grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏢</div><div class="empty-text">Sin empresas registradas</div><div class="empty-sub">Crea tu primera empresa arriba</div></div>`;
     return;
@@ -1508,7 +1527,7 @@ function rebuildEmpresaSelector() {
       </span>
     </div>`;
   }).join('');
-  const addCard=`<div class="emp-add-card" onclick="document.getElementById('empresaSelector').classList.remove('visible');abrirModalNuevaEmpresa()">
+  const addCard=`<div class="emp-add-card" onclick="openModal('modalEmpresa')">
     <div class="emp-add-icon">➕</div>
     <div class="emp-add-label">Nueva Empresa</div>
   </div>`;
@@ -1545,7 +1564,7 @@ function applyEmpresaTheme(emp) {
     document.getElementById('headerDate').parentNode.insertBefore(btn,document.getElementById('headerDate'));
   }
   btn.textContent='⇄ '+emp.nombre.split(' ')[0];
-  btn.onclick=()=>abrirSelectorEmpresas();
+  btn.onclick=()=>showSection('empresas');
 }
 
 
@@ -1568,16 +1587,17 @@ function updateDate() {
 updateDate(); setInterval(updateDate,60000);
 
 // ═══ INIT ═══
-initEmpresas(); // carga defaults si es la primera vez
+initEmpresas();
 updateBadges();
-// Siempre arranca mostrando el selector de empresas
-abrirSelectorEmpresas();
-// Si había una empresa activa previa, cargar sus datos en segundo plano
+// Siempre arranca en la sección de empresas
+showSection('empresas');
+// Si había empresa activa previa, cargar sus datos
 const _savedKey=localStorage.getItem('dal_empresa_actual');
 if(_savedKey&&getEmpresa(_savedKey)){
   cargarDatosEmpresa(getEmpresa(_savedKey));
   applyEmpresaTheme(getEmpresa(_savedKey));
   updateBadges();
+  renderEmpresas(); // re-render para marcar la activa
 }
 
 </script>
