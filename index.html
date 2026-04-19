@@ -5,7 +5,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>SiFa — Sistema Integral de Facturación y Asientos</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SiFa">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+</script>
 <style>
   :root {
     --red: #6366F1; --red-dark: #4F46E5; --blue: #0EA5E9; --blue-dark: #0284C7;
@@ -147,7 +161,7 @@
   <div class="header-date" id="headerDate"></div>
 </header>
 
-<nav>
+<nav id="mainNav">
   <button class="nav-tab active" onclick="showSection('dashboard')" id="tab-dashboard"><span>📊</span> Dashboard</button>
   <button class="nav-tab" onclick="showSection('clientes')" id="tab-clientes"><span>👤</span> Clientes <span class="badge" id="badge-clientes">0</span></button>
   <button class="nav-tab" onclick="showSection('mercancias')" id="tab-mercancias"><span>📦</span> Productos <span class="badge" id="badge-mercancias">0</span></button>
@@ -159,102 +173,60 @@
 </nav>
 
 <main>
-  <div class="section active" id="section-dashboard">
-    <div class="page-header">
-      <div><div class="page-title">RESUMEN <span>GENERAL</span></div><div class="page-sub">Estado financiero de la empresa activa</div></div>
-      <button class="btn btn-primary" id="btnCompartirDash" onclick="compartirDashboard()">⬆️ Exportar PDF</button>
-    </div>
-    <div id="dashboardContenido">
-      <div class="stats-row" id="statsRow"></div>
-      <div class="section-label">Facturas recientes</div>
-      <div class="table-wrapper">
-        <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Cliente</th><th>Producto</th><th>Importe</th><th>Cobrado</th><th>Saldo</th><th>Estatus</th></tr></thead><tbody id="dashboardTable"></tbody></table>
+
+  <!-- ═══ PORTADA / SELECTOR DE EMPRESAS ═══ -->
+  <div class="section" id="section-empresas" style="padding:0;margin:0;max-width:100%">
+
+    <!-- HERO PORTADA -->
+    <div style="min-height:calc(100vh - 120px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 32px;background:radial-gradient(ellipse 80% 60% at 50% -10%,#16163A 0%,#0A0A0F 70%)">
+
+      <!-- Logo enorme -->
+      <div style="margin-bottom:40px;text-align:center;user-select:none">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:min(18vw,120px);letter-spacing:10px;line-height:1;color:#EEEEF2;opacity:.95">SiFa</div>
+        <div style="font-size:11px;letter-spacing:5px;text-transform:uppercase;color:#333348;margin-top:2px">Sistema Integral de Facturación y Asientos</div>
       </div>
-    </div>
-  </div>
 
-  <div class="section" id="section-clientes">
-    <div class="page-header">
-      <div><div class="page-title">GESTIÓN DE <span>CLIENTES</span></div><div class="page-sub">Cartera de clientes de la empresa activa</div></div>
-      <button class="btn btn-primary" onclick="openModal('modalCliente')">＋ Nuevo Cliente</button>
-    </div>
-    <div id="clientesGrid" class="cards-grid"></div>
-  </div>
+      <!-- Pregunta -->
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:4px;color:#55556A;margin-bottom:40px;text-align:center;text-transform:uppercase">¿Con qué empresa trabajas hoy?</div>
 
-  <div class="section" id="section-mercancias">
-    <div class="page-header">
-      <div><div class="page-title">CATÁLOGO DE <span>PRODUCTOS</span></div><div class="page-sub">Productos y servicios de la empresa activa</div></div>
-      <button class="btn btn-primary" onclick="openModal('modalMercancia')">＋ Nuevo Producto</button>
-    </div>
-    <div id="mercanciasGrid" class="cards-grid"></div>
-  </div>
+      <!-- Tarjetas -->
+      <div id="empresasCards" style="display:flex;flex-wrap:wrap;gap:20px;justify-content:center;width:100%;max-width:1100px;margin-bottom:48px"></div>
 
-  <div class="section" id="section-facturas">
-    <div class="page-header">
-      <div><div class="page-title">REGISTRO DE <span>FACTURAS</span></div><div class="page-sub">Documentos de venta emitidos</div></div>
-      <button class="btn btn-primary" onclick="openModal('modalFactura')">＋ Nueva Factura</button>
-    </div>
-    <div class="filters">
-      <select id="filtroClienteFactura" onchange="renderFacturas()"><option value="">Todos los clientes</option></select>
-      <select id="filtroEstatus" onchange="renderFacturas()">
-        <option value="">Todos los estatus</option>
-        <option value="Pagado">✅ Pagado</option>
-        <option value="Pagado parcialmente">🟡 Parcialmente pagado</option>
-        <option value="Pendiente">🔴 Pendiente</option>
-      </select>
-    </div>
-    <div class="table-wrapper">
-      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Cliente</th><th>Producto</th><th>A Favor</th><th>Importe</th><th>Cobrado</th><th>Saldo</th><th>Estatus</th><th>Acciones</th></tr></thead><tbody id="facturasTable"></tbody></table>
-    </div>
-  </div>
+      <!-- CTA Nueva empresa -->
+      <button id="btnNuevaEmpresaPortada" onclick="openModal('modalEmpresa')"
+        style="display:flex;align-items:center;gap:10px;padding:14px 36px;background:transparent;border:1.5px dashed #2A2A38;border-radius:14px;color:#55556A;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .25s;letter-spacing:.5px"
+        onmouseover="this.style.borderColor='#6366F1';this.style.color='#EEEEF2';this.style.background='#6366F108'"
+        onmouseout="this.style.borderColor='#2A2A38';this.style.color='#55556A';this.style.background='transparent'">
+        <span style="font-size:18px;line-height:1">＋</span> Agregar empresa
+      </button>
 
-  <div class="section" id="section-pagos">
-    <div class="page-header">
-      <div><div class="page-title">REGISTRO DE <span>COBROS</span></div><div class="page-sub">Pagos e ingresos recibidos</div></div>
-      <button class="btn btn-blue" onclick="openModal('modalPago')">＋ Registrar Cobro</button>
-    </div>
-    <div class="filters">
-      <select id="filtroClientePago" onchange="renderPagos()"><option value="">Todos los clientes</option></select>
-    </div>
-    <div class="table-wrapper">
-      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Cliente</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr></thead><tbody id="pagosTable"></tbody></table>
-    </div>
-  </div>
+    </div><!-- /hero -->
 
-  <div class="section" id="section-calc">
-    <div class="page-header">
-      <div><div class="page-title">FORMACIÓN DE <span>PRECIOS</span></div><div class="page-sub">Calculadora de costos, márgenes y utilidades</div></div>
-      <button class="btn btn-primary" onclick="openModal('modalCalc')">＋ Nuevo Cálculo</button>
-    </div>
-    <div class="table-wrapper">
-      <table>
-        <thead><tr>
-          <th>Fecha</th><th>Referencia</th><th>Producto</th>
-          <th>Costo Base</th><th>Margen</th><th>Flete / Extra</th>
-          <th>Precio/u</th><th>P. Venta</th><th>Utilidad</th>
-          <th>Acciones</th>
-        </tr></thead>
-        <tbody id="calcTable"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- EMPRESAS — pantalla de inicio -->
-  <div class="section" id="section-empresas">
-    <div style="text-align:center;padding:32px 0 28px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:4px;color:var(--red);margin-bottom:12px">SiFa · Sistema Integral de Facturación y Asientos</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--text)">¿Con qué empresa quieres trabajar hoy?</div>
-      <div style="font-size:13px;color:var(--text2);margin-top:8px">Selecciona una empresa para activarla, o crea una nueva</div>
-    </div>
-    <div id="empresasCards" style="display:flex;flex-wrap:wrap;gap:20px;justify-content:center;margin-bottom:40px"></div>
-    <div style="border-top:1px solid var(--border);padding-top:28px">
-      <div class="page-header">
-        <div><div class="page-title" style="font-size:24px">TODAS LAS <span>EMPRESAS</span></div><div class="page-sub">Detalles y configuración</div></div>
-        <button class="btn btn-primary" onclick="openModal('modalEmpresa')">＋ Nueva Empresa</button>
+    <!-- GESTIÓN DETALLADA (colapsable) -->
+    <div id="empresasDetalle" style="display:none;padding:32px 24px;max-width:1200px;margin:0 auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="page-title" style="font-size:26px">GESTIÓN DE <span>EMPRESAS</span></div>
+          <div class="page-sub">Editar, eliminar y configurar datos de empresa</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-secondary btn-sm" onclick="toggleEmpresasDetalle(false)">↑ Ocultar</button>
+          <button class="btn btn-primary" onclick="openModal('modalEmpresa')">＋ Nueva</button>
+        </div>
       </div>
       <div id="empresasGrid" class="cards-grid"></div>
     </div>
-  </div>
+
+    <!-- Toggle gestión -->
+    <div id="empresasDetalleToggle" style="text-align:center;padding:12px 0 24px;border-top:1px solid #14141E">
+      <button onclick="toggleEmpresasDetalle(true)"
+        style="background:none;border:none;color:#333348;font-size:11px;cursor:pointer;letter-spacing:2px;font-family:'DM Sans',sans-serif;text-transform:uppercase;padding:8px 16px;border-radius:8px;transition:color .2s"
+        onmouseover="this.style.color='var(--text2)'" onmouseout="this.style.color='#333348'">
+        ▼ &nbsp; Gestionar empresas
+      </button>
+    </div>
+
+  </div><!-- /section-empresas -->
 
   <div class="section" id="section-invoices">
     <div class="page-header">
@@ -815,19 +787,38 @@ function toast(msg, type='success') {
 
 // ═══ NAV ═══
 function showSection(id) {
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('section-'+id).classList.add('active');
-  document.getElementById('tab-'+id).classList.add('active');
-  if(id==='dashboard')  renderDashboard();
-  if(id==='clientes')   renderClientes();
-  if(id==='mercancias') renderMercancias();
-  if(id==='facturas')   renderFacturas();
-  if(id==='pagos')      renderPagos();
-  if(id==='invoices')   renderInvoices();
-  if(id==='calc')       renderCalc();
-  if(id==='empresas')   renderEmpresas();
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+
+  // Ocultar nav y minimizar header en la portada de empresas
+  const nav    = document.getElementById('mainNav');
+  const header = document.querySelector('header');
+  if (id === 'empresas') {
+    nav.style.display = 'none';
+    header.style.display = 'none';
+  } else {
+    nav.style.display = '';
+    header.style.display = '';
+  }
+
+  if (id === 'dashboard')  renderDashboard();
+  if (id === 'clientes')   renderClientes();
+  if (id === 'mercancias') renderMercancias();
+  if (id === 'facturas')   renderFacturas();
+  if (id === 'pagos')      renderPagos();
+  if (id === 'invoices')   renderInvoices();
+  if (id === 'calc')       renderCalc();
+  if (id === 'empresas')   renderEmpresas();
 }
+
+function toggleEmpresasDetalle(show) {
+  document.getElementById('empresasDetalle').style.display = show ? 'block' : 'none';
+  document.getElementById('empresasDetalleToggle').style.display = show ? 'none' : 'block';
+  if (show) renderEmpresas();
+}
+
 
 // ═══ MODAL ═══
 function openModal(id) {
@@ -1809,73 +1800,87 @@ function deleteEmpresa(key) {
 
 // ── Tarjetas en sección Empresas ──
 function renderEmpresas() {
-  const grid=document.getElementById('empresasGrid'); if(!grid) return;
-  const cardsTop=document.getElementById('empresasCards');
-  const todas=getTodasEmpresas();
-  const actKey=localStorage.getItem('dal_empresa_actual');
+  const grid    = document.getElementById('empresasGrid'); if (!grid) return;
+  const cardsTop = document.getElementById('empresasCards');
+  const todas   = getTodasEmpresas();
+  const actKey  = localStorage.getItem('dal_empresa_actual');
 
-  // ── Tarjetas visuales (parte superior) ──
-  if(cardsTop) {
-    if(!Object.keys(todas).length) {
-      cardsTop.innerHTML='';
-    } else {
-      const topHTML=Object.entries(todas).map(([key,emp])=>{
-        const isActiva=key===actKey;
-        const pc=emp.colorPrimary||'#6366F1', sc=emp.colorSecondary||'#0EA5E9', ac=emp.colorAccent||'#22C55E';
-        const logoHTML=emp.logo
-          ?`<img src="${emp.logo}" style="width:100px;height:66px;object-fit:contain;margin-bottom:12px">`
-          :`<div style="width:72px;height:50px;background:linear-gradient(135deg,${pc},${sc});border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:12px">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
-        const dots=`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${pc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${sc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${ac}"></span>`;
-        return `<div class="empresa-card" onclick="seleccionarEmpresaDirecta('${key}')"
-          style="border-color:${isActiva?pc:'#2A2A38'};box-shadow:${isActiva?`0 0 0 2px ${pc}, 0 8px 28px ${pc}33`:'none'}">
-          <button class="emp-edit-btn" onclick="event.stopPropagation();editEmpresaModal('${key}')">✏️ Editar</button>
-          ${logoHTML}
-          <div class="emp-name">${emp.nombre}</div>
-          <div class="emp-sub">${emp.ein||''}<br>${emp.sub||''}</div>
-          <div style="margin-top:10px">${dots}</div>
-          <span class="emp-badge" style="background:${pc}22;color:${pc};margin-top:8px;display:inline-block">
-            ${isActiva?'✓ ACTIVA':emp.nombre.split(' ')[0]}
-          </span>
-        </div>`;
-      }).join('');
-      const addCard=`<div class="emp-add-card" onclick="openModal('modalEmpresa')">
-        <div class="emp-add-icon">➕</div>
-        <div class="emp-add-label">Nueva Empresa</div>
+  // ── PORTADA: tarjetas grandes ──
+  if (cardsTop) {
+    cardsTop.innerHTML = Object.entries(todas).map(([key, emp]) => {
+      const isActiva = key === actKey;
+      const pc = emp.colorPrimary   || '#6366F1';
+      const sc = emp.colorSecondary || '#0EA5E9';
+      const ac = emp.colorAccent    || '#22C55E';
+
+      const logoHTML = emp.logo
+        ? `<img src="${emp.logo}" style="width:110px;height:72px;object-fit:contain;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4))">`
+        : `<div style="width:80px;height:56px;background:linear-gradient(135deg,${pc},${sc});border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:16px;box-shadow:0 6px 20px ${pc}44">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
+
+      const dots = `<div style="display:flex;gap:5px;justify-content:center;margin-top:10px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${pc};display:inline-block"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:${sc};display:inline-block"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:${ac};display:inline-block"></span>
       </div>`;
-      cardsTop.innerHTML=topHTML+addCard;
-    }
+
+      const btnActiva = isActiva
+        ? `<div style="margin-top:16px">
+            <button onclick="event.stopPropagation();seleccionarEmpresaDirecta('${key}')" style="width:100%;padding:10px;background:${pc};color:white;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;cursor:pointer;transition:all .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+              IR AL DASHBOARD →
+            </button>
+           </div>`
+        : `<div style="margin-top:16px">
+            <button onclick="event.stopPropagation();seleccionarEmpresaDirecta('${key}')" style="width:100%;padding:10px;background:transparent;color:${pc};border:1.5px solid ${pc}44;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;cursor:pointer;transition:all .2s" onmouseover="this.style.background='${pc}22';this.style.borderColor='${pc}'" onmouseout="this.style.background='transparent';this.style.borderColor='${pc}44'">
+              ACTIVAR
+            </button>
+           </div>`;
+
+      return `<div style="background:${isActiva ? pc+'0D' : 'var(--surface)'};border:2px solid ${isActiva ? pc : '#1E1E28'};border-radius:20px;padding:28px 24px;text-align:center;min-width:200px;max-width:240px;width:220px;transition:all .25s;cursor:default;position:relative"
+        onmouseover="this.style.borderColor='${pc}';this.style.background='${pc}11'"
+        onmouseout="this.style.borderColor='${isActiva ? pc : '#1E1E28'}';this.style.background='${isActiva ? pc+'0D' : 'var(--surface)'}'">
+        <button class="emp-edit-btn" onclick="event.stopPropagation();editEmpresaModal('${key}')">✏️ Editar</button>
+        ${logoHTML}
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#EEEEF2;margin-bottom:3px;line-height:1.2">${emp.nombre}</div>
+        <div style="font-size:10px;color:#55556A;line-height:1.5">${emp.ein || emp.sub || ''}</div>
+        ${dots}
+        ${isActiva ? `<div style="margin-top:8px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:${pc};font-weight:700">✓ Activa</div>` : ''}
+        ${btnActiva}
+      </div>`;
+    }).join('');
   }
 
-  // ── Grid detallado (parte inferior) ──
-  if(!Object.keys(todas).length){
-    grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏢</div><div class="empty-text">Sin empresas registradas</div><div class="empty-sub">Crea tu primera empresa arriba</div></div>`;
+  // ── GESTIÓN DETALLADA (grid inferior) ──
+  if (!Object.keys(todas).length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏢</div><div class="empty-text">Sin empresas registradas</div></div>`;
     return;
   }
-  grid.innerHTML=Object.entries(todas).map(([key,emp])=>{
-    const isActiva=key===actKey;
-    const pc=emp.colorPrimary||'#6366F1', sc=emp.colorSecondary||'#0EA5E9', ac=emp.colorAccent||'#22C55E';
-    const logoEl=emp.logo
-      ?`<img src="${emp.logo}" style="width:58px;height:40px;object-fit:contain;border-radius:6px">`
-      :`<div style="width:58px;height:40px;background:linear-gradient(135deg,${pc},${sc});border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
-    const palette=`<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${pc};margin-right:3px"></span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sc};margin-right:3px"></span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${ac}"></span>`;
-    return `<div class="card" style="border-color:${isActiva?pc:'var(--border)'};${isActiva?`box-shadow:0 0 0 1px ${pc}55`:''}">
+  grid.innerHTML = Object.entries(todas).map(([key, emp]) => {
+    const isActiva = key === actKey;
+    const pc = emp.colorPrimary   || '#6366F1';
+    const sc = emp.colorSecondary || '#0EA5E9';
+    const ac = emp.colorAccent    || '#22C55E';
+    const logoEl = emp.logo
+      ? `<img src="${emp.logo}" style="width:52px;height:36px;object-fit:contain;border-radius:6px">`
+      : `<div style="width:52px;height:36px;background:linear-gradient(135deg,${pc},${sc});border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
+    const palette = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${pc};margin-right:3px"></span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sc};margin-right:3px"></span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${ac}"></span>`;
+    return `<div class="card" style="border-color:${isActiva ? pc : 'var(--border)'}">
       <div class="card-header">
-        <div style="display:flex;align-items:center;gap:12px">${logoEl}
+        <div style="display:flex;align-items:center;gap:10px">${logoEl}
           <div><div class="card-name" style="font-size:13px">${emp.nombre}</div>
-          <div style="font-size:10px;color:var(--text2);margin-top:2px">${emp.ein||emp.sub||''}</div></div>
+          <div style="font-size:10px;color:var(--text2);margin-top:1px">${emp.ein || emp.sub || ''}</div></div>
         </div>
         <div class="card-actions">
-          ${!isActiva?`<button class="btn btn-sm" style="background:${pc};color:white;border:none" onclick="seleccionarEmpresaDirecta('${key}')">▶ Activar</button>`:''}
+          ${!isActiva ? `<button class="btn btn-sm" style="background:${pc};color:white;border:none" onclick="seleccionarEmpresaDirecta('${key}')">▶ Activar</button>` : ''}
           <button class="btn btn-secondary btn-sm" onclick="editEmpresaModal('${key}')">✏️</button>
-          ${!isActiva?`<button class="btn btn-danger btn-sm" onclick="deleteEmpresa('${key}')">✕</button>`:''}
+          ${!isActiva ? `<button class="btn btn-danger btn-sm" onclick="deleteEmpresa('${key}')">✕</button>` : ''}
         </div>
       </div>
-      ${emp.direccion?`<div class="card-row"><span class="card-label">Dirección</span><span class="card-value" style="font-size:11px;text-align:right">${emp.direccion}</span></div>`:''}
-      ${emp.banco?`<div class="card-row"><span class="card-label">Banco</span><span class="card-value" style="font-size:11px">${emp.banco}</span></div>`:''}
-      ${emp.gerente?`<div class="card-row"><span class="card-label">Firmante</span><span class="card-value" style="font-size:11px">${emp.gerente}</span></div>`:''}
+      ${emp.direccion ? `<div class="card-row"><span class="card-label">Dirección</span><span class="card-value" style="font-size:11px;text-align:right">${emp.direccion}</span></div>` : ''}
+      ${emp.banco     ? `<div class="card-row"><span class="card-label">Banco</span><span class="card-value" style="font-size:11px">${emp.banco}</span></div>` : ''}
+      ${emp.gerente   ? `<div class="card-row"><span class="card-label">Firmante</span><span class="card-value" style="font-size:11px">${emp.gerente}</span></div>` : ''}
       <div class="card-row"><span class="card-label">Prefijo BD</span><span class="card-value mono">${emp.dbPrefix}</span></div>
       <div class="card-row"><span class="card-label">Paleta</span><span>${palette}</span></div>
-      ${isActiva?`<div style="margin-top:10px;padding:6px 10px;background:${pc}22;border-radius:8px;font-size:11px;color:${pc};font-weight:700;text-align:center">✓ EMPRESA ACTIVA</div>`:''}
+      ${isActiva ? `<div style="margin-top:10px;padding:6px 10px;background:${pc}22;border-radius:8px;font-size:11px;color:${pc};font-weight:700;text-align:center">✓ EMPRESA ACTIVA</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1939,8 +1944,8 @@ function applyEmpresaTheme(emp) {
     btn.style.cssText='background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:8px;font-size:11px;cursor:pointer;font-family:DM Sans,sans-serif;margin-right:12px;transition:all .2s';
     document.getElementById('headerDate').parentNode.insertBefore(btn,document.getElementById('headerDate'));
   }
-  btn.textContent='⇄ '+emp.nombre.split(' ')[0];
-  btn.onclick=()=>showSection('empresas');
+  btn.textContent = '⇄ ' + emp.nombre.split(' ')[0];
+  btn.onclick = () => showSection('empresas');
 }
 
 
