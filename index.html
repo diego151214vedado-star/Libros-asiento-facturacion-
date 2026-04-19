@@ -5,21 +5,85 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>SiFa — Sistema Integral de Facturación y Asientos</title>
-<link rel="manifest" href="manifest.json">
+
+<!-- PWA: manifest inline via blob -->
 <meta name="theme-color" content="#0A0A0F">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SiFa">
-<link rel="apple-touch-icon" href="icon-192.png">
+
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
-    });
-  }
+// ── Icono SVG embebido (no necesita archivo externo) ──
+const _SIFA_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="110" fill="#0D0D1A"/>
+  <text x="256" y="340" font-family="Arial Black,Impact,sans-serif" font-size="280" font-weight="900"
+    text-anchor="middle" fill="#EEEEF2" letter-spacing="-8">SiFa</text>
+  <rect x="158" y="370" width="196" height="8" rx="4" fill="url(#lg)"/>
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6366F1" stop-opacity="0"/>
+      <stop offset="0.3" stop-color="#6366F1"/>
+      <stop offset="0.7" stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#0EA5E9" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>`;
+
+const _SIFA_ICON_URL = 'data:image/svg+xml;base64,' + btoa(_SIFA_ICON_SVG);
+
+// ── Manifest inline ──
+const _manifest = {
+  name: 'SiFa — Facturación y Asientos',
+  short_name: 'SiFa',
+  description: 'Sistema Integral de Facturación y Asientos',
+  start_url: './',
+  display: 'standalone',
+  background_color: '#0A0A0F',
+  theme_color: '#0A0A0F',
+  orientation: 'any',
+  icons: [
+    { src: _SIFA_ICON_URL, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+    { src: _SIFA_ICON_URL, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+  ]
+};
+const _manifestBlob = new Blob([JSON.stringify(_manifest)], {type:'application/manifest+json'});
+const _manifestURL  = URL.createObjectURL(_manifestBlob);
+const _mlink = document.createElement('link');
+_mlink.rel = 'manifest'; _mlink.href = _manifestURL;
+document.currentScript.after(_mlink);
+
+// Apple touch icon inline
+const _alink = document.createElement('link');
+_alink.rel = 'apple-touch-icon'; _alink.href = _SIFA_ICON_URL;
+document.currentScript.after(_alink);
+
+// ── Service Worker inline ──
+const _swCode = `
+const CACHE='sifa-v2';
+self.addEventListener('install',e=>{self.skipWaiting();});
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+  self.clients.claim();
+});
+self.addEventListener('fetch',e=>{
+  e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{
+    if(r.ok){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl));}
+    return r;
+  })));
+});`;
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swBlob = new Blob([_swCode], {type:'application/javascript'});
+    const swURL  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swURL, {scope: './'}).catch(()=>{});
+  });
+}
 </script>
+
 <style>
   :root {
     --red: #6366F1; --red-dark: #4F46E5; --blue: #0EA5E9; --blue-dark: #0284C7;
@@ -228,7 +292,91 @@
 
   </div><!-- /section-empresas -->
 
-  <div class="section" id="section-invoices">
+  <!-- DASHBOARD -->
+  <div class="section active" id="section-dashboard">
+    <div class="page-header">
+      <div>
+        <div class="page-title">RESUMEN <span>GENERAL</span></div>
+        <div class="page-sub" id="dashEmpresaNombre">Selecciona una empresa para comenzar</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button id="btnEditarEmpresa" class="btn btn-secondary btn-sm" onclick="editEmpresaActiva()" style="display:none">✏️ Editar empresa</button>
+        <button class="btn btn-primary" id="btnCompartirDash" onclick="compartirDashboard()">⬆️ Exportar PDF</button>
+      </div>
+    </div>
+    <div id="dashboardContenido">
+      <div class="stats-row" id="statsRow"></div>
+      <div class="section-label">Documentos recientes</div>
+      <div class="table-wrapper">
+        <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Cliente</th><th>Producto</th><th>Importe</th><th>Cobrado</th><th>Saldo</th><th>Estatus</th></tr></thead><tbody id="dashboardTable"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div class="section" id="section-clientes">
+    <div class="page-header">
+      <div><div class="page-title">GESTIÓN DE <span>CLIENTES</span></div><div class="page-sub">Cartera de clientes de la empresa activa</div></div>
+      <button class="btn btn-primary" onclick="openModal('modalCliente')">＋ Nuevo Cliente</button>
+    </div>
+    <div id="clientesGrid" class="cards-grid"></div>
+  </div>
+
+  <!-- PRODUCTOS -->
+  <div class="section" id="section-mercancias">
+    <div class="page-header">
+      <div><div class="page-title">CATÁLOGO DE <span>PRODUCTOS</span></div><div class="page-sub">Productos y servicios de la empresa activa</div></div>
+      <button class="btn btn-primary" onclick="openModal('modalMercancia')">＋ Nuevo Producto</button>
+    </div>
+    <div id="mercanciasGrid" class="cards-grid"></div>
+  </div>
+
+  <!-- FACTURAS -->
+  <div class="section" id="section-facturas">
+    <div class="page-header">
+      <div><div class="page-title">REGISTRO DE <span>FACTURAS</span></div><div class="page-sub">Documentos de venta emitidos</div></div>
+      <button class="btn btn-primary" onclick="openModal('modalFactura')">＋ Nueva Factura</button>
+    </div>
+    <div class="filters">
+      <select id="filtroClienteFactura" onchange="renderFacturas()"><option value="">Todos los clientes</option></select>
+      <select id="filtroEstatus" onchange="renderFacturas()">
+        <option value="">Todos los estatus</option>
+        <option value="Pagado">✅ Pagado</option>
+        <option value="Pagado parcialmente">🟡 Parcialmente pagado</option>
+        <option value="Pendiente">🔴 Pendiente</option>
+      </select>
+    </div>
+    <div class="table-wrapper">
+      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Cliente</th><th>Producto</th><th>A Favor</th><th>Importe</th><th>Cobrado</th><th>Saldo</th><th>Estatus</th><th>Acciones</th></tr></thead><tbody id="facturasTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- COBROS -->
+  <div class="section" id="section-pagos">
+    <div class="page-header">
+      <div><div class="page-title">REGISTRO DE <span>COBROS</span></div><div class="page-sub">Pagos e ingresos recibidos</div></div>
+      <button class="btn btn-blue" onclick="openModal('modalPago')">＋ Registrar Cobro</button>
+    </div>
+    <div class="filters">
+      <select id="filtroClientePago" onchange="renderPagos()"><option value="">Todos los clientes</option></select>
+    </div>
+    <div class="table-wrapper">
+      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Cliente</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr></thead><tbody id="pagosTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- PRECIOS -->
+  <div class="section" id="section-calc">
+    <div class="page-header">
+      <div><div class="page-title">FORMACIÓN DE <span>PRECIOS</span></div><div class="page-sub">Calculadora de costos, márgenes y utilidades</div></div>
+      <button class="btn btn-primary" onclick="openModal('modalCalc')">＋ Nuevo Cálculo</button>
+    </div>
+    <div class="table-wrapper">
+      <table><thead><tr><th>Fecha</th><th>Referencia</th><th>Producto</th><th>Costo Base</th><th>Margen</th><th>Flete / Extra</th><th>Precio/u</th><th>P. Venta</th><th>Utilidad</th><th>Acciones</th></tr></thead><tbody id="calcTable"></tbody></table>
+    </div>
+  </div>
+
+
     <div class="page-header">
       <div><div class="page-title">CREAR <span>INVOICE</span></div><div class="page-sub">Genera y comparte documentos comerciales</div></div>
       <button class="btn btn-primary" onclick="openModal('modalInvoice')">＋ Nuevo Documento</button>
@@ -1024,8 +1172,21 @@ function renderPagos() {
   }).join('');
 }
 
+// ── Editar empresa desde el dashboard ──
+function editEmpresaActiva() {
+  if (!empresaActual) return;
+  const actKey = localStorage.getItem('dal_empresa_actual');
+  if (actKey) editEmpresaModal(actKey);
+}
+
 // ═══ DASHBOARD ═══
 function renderDashboard() {
+  // Mostrar nombre empresa y botón editar
+  const sub = document.getElementById('dashEmpresaNombre');
+  const btnEdit = document.getElementById('btnEditarEmpresa');
+  if (sub) sub.textContent = empresaActual ? empresaActual.nombre : 'Selecciona una empresa para comenzar';
+  if (btnEdit) btnEdit.style.display = empresaActual ? 'inline-flex' : 'none';
+
   const totalDeuda=facturas.reduce((s,f)=>s+parseFloat(f.deuda),0);
   const totalIngresado=pagos.reduce((s,p)=>s+p.monto,0);
   const totalSaldo=facturas.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(sal>0?sal:0);},0);
@@ -1824,26 +1985,18 @@ function renderEmpresas() {
       </div>`;
 
       const btnActiva = isActiva
-        ? `<div style="margin-top:16px">
-            <button onclick="event.stopPropagation();seleccionarEmpresaDirecta('${key}')" style="width:100%;padding:10px;background:${pc};color:white;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;cursor:pointer;transition:all .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-              IR AL DASHBOARD →
-            </button>
-           </div>`
-        : `<div style="margin-top:16px">
-            <button onclick="event.stopPropagation();seleccionarEmpresaDirecta('${key}')" style="width:100%;padding:10px;background:transparent;color:${pc};border:1.5px solid ${pc}44;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;cursor:pointer;transition:all .2s" onmouseover="this.style.background='${pc}22';this.style.borderColor='${pc}'" onmouseout="this.style.background='transparent';this.style.borderColor='${pc}44'">
-              ACTIVAR
-            </button>
-           </div>`;
+        ? `<div style="margin-top:14px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:${pc};font-weight:700">✓ Activa — toca para entrar</div>`
+        : `<div style="margin-top:14px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#444455">Toca para activar</div>`;
 
-      return `<div style="background:${isActiva ? pc+'0D' : 'var(--surface)'};border:2px solid ${isActiva ? pc : '#1E1E28'};border-radius:20px;padding:28px 24px;text-align:center;min-width:200px;max-width:240px;width:220px;transition:all .25s;cursor:default;position:relative"
-        onmouseover="this.style.borderColor='${pc}';this.style.background='${pc}11'"
-        onmouseout="this.style.borderColor='${isActiva ? pc : '#1E1E28'}';this.style.background='${isActiva ? pc+'0D' : 'var(--surface)'}'">
-        <button class="emp-edit-btn" onclick="event.stopPropagation();editEmpresaModal('${key}')">✏️ Editar</button>
+      return `<div onclick="seleccionarEmpresaDirecta('${key}')"
+        style="background:${isActiva ? pc+'10' : 'var(--surface)'};border:2px solid ${isActiva ? pc : '#1E1E28'};border-radius:20px;padding:28px 24px;text-align:center;min-width:200px;max-width:240px;width:220px;cursor:pointer;transition:all .25s;position:relative"
+        onmouseover="this.style.borderColor='${pc}';this.style.background='${pc}18';this.style.transform='translateY(-3px)'"
+        onmouseout="this.style.borderColor='${isActiva ? pc : '#1E1E28'}';this.style.background='${isActiva ? pc+'10' : 'var(--surface)'}';this.style.transform='translateY(0)'">
+        <button class="emp-edit-btn" onclick="event.stopPropagation();editEmpresaModal('${key}')">✏️</button>
         ${logoHTML}
         <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#EEEEF2;margin-bottom:3px;line-height:1.2">${emp.nombre}</div>
         <div style="font-size:10px;color:#55556A;line-height:1.5">${emp.ein || emp.sub || ''}</div>
         ${dots}
-        ${isActiva ? `<div style="margin-top:8px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:${pc};font-weight:700">✓ Activa</div>` : ''}
         ${btnActiva}
       </div>`;
     }).join('');
