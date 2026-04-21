@@ -94,25 +94,199 @@ if ('serviceWorker' in navigator) {
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 68px; position: sticky; top: 0; z-index: 100; }
-  .logo { display: flex; align-items: center; gap: 14px; }
-  .logo-icon { width: 42px; height: 42px; position: relative; flex-shrink: 0; background: linear-gradient(135deg, #6366F1, #0EA5E9); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: white; letter-spacing: -1px; box-shadow: 0 4px 14px rgba(99,102,241,.4); }
-  .logo-icon .half-l, .logo-icon .half-r { display: none; }
-  .logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; line-height: 1; }
-  .logo-text span { color: var(--red); }
-  .logo-sub { font-size: 10px; color: var(--text2); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
-  .header-date { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); text-align: right; }
-  nav { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; scrollbar-width: none; padding: 0 16px; }
-  nav::-webkit-scrollbar { display: none; }
-  .nav-tab { display: flex; align-items: center; gap: 8px; padding: 0 20px; height: 52px; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all .2s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; }
-  .nav-tab:hover { color: var(--text); }
-  .nav-tab.active { color: var(--text); border-bottom-color: var(--red); }
-  .badge { background: var(--red); color: white; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; font-family: 'DM Mono', monospace; }
-  main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+  /* ═══ LAYOUT PRINCIPAL ═══ */
+  #app-shell {
+    display: flex; min-height: 100vh;
+  }
+
+  /* ── SIDEBAR IZQUIERDO ── */
+  #sidebar {
+    width: 220px; flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0;
+    z-index: 200; transition: transform .3s;
+    overflow: hidden;
+  }
+
+  /* Logo SiFa en sidebar */
+  #sidebar-brand {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  #sidebar-logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #6366F1, #0EA5E9);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: white;
+    box-shadow: 0 4px 14px rgba(99,102,241,.35);
+    flex-shrink: 0;
+  }
+  #sidebar-brand-text { line-height: 1; }
+  #sidebar-brand-text .name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 2px; color: var(--text);
+  }
+  #sidebar-brand-text .sub {
+    font-size: 9px; color: var(--text2);
+    letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px;
+  }
+
+  /* Empresa activa en sidebar */
+  #sidebar-empresa {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #sidebar-empresa-label {
+    font-size: 9px; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--text2); margin-bottom: 6px;
+  }
+  #sidebar-empresa-card {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border-radius: 10px;
+    padding: 8px 10px; cursor: pointer;
+    border: 1px solid var(--border); transition: all .2s;
+  }
+  #sidebar-empresa-card:hover { border-color: var(--red); }
+  #sidebar-emp-logo {
+    width: 32px; height: 32px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--red), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 900; color: white;
+    font-family: 'Bebas Neue', sans-serif; flex-shrink: 0;
+    overflow: hidden;
+  }
+  #sidebar-emp-info { flex: 1; min-width: 0; }
+  #sidebar-emp-nombre {
+    font-size: 12px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--text);
+  }
+  #sidebar-emp-sub { font-size: 10px; color: var(--text2); margin-top: 1px; }
+  #sidebar-empresa-card .arrow {
+    font-size: 10px; color: var(--text2); flex-shrink: 0;
+  }
+
+  /* Nav items */
+  #sidebar-nav {
+    flex: 1; overflow-y: auto; padding: 12px 10px;
+    scrollbar-width: none;
+  }
+  #sidebar-nav::-webkit-scrollbar { display: none; }
+
+  .nav-section-label {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text2); padding: 8px 10px 4px; margin-top: 6px;
+  }
+
+  .nav-tab {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 12px;
+    border-radius: 10px; font-size: 13px; font-weight: 500;
+    color: var(--text2); cursor: pointer; border: none;
+    background: none; font-family: 'DM Sans', sans-serif;
+    transition: all .15s; text-align: left;
+    margin-bottom: 2px; position: relative;
+  }
+  .nav-tab:hover { background: var(--surface2); color: var(--text); }
+  .nav-tab.active {
+    background: var(--red)18;
+    color: var(--text);
+  }
+  .nav-tab.active::before {
+    content: ''; position: absolute; left: 0; top: 20%; bottom: 20%;
+    width: 3px; background: var(--red); border-radius: 0 3px 3px 0;
+  }
+  .nav-tab .nav-icon { font-size: 16px; flex-shrink: 0; }
+  .nav-tab .nav-label { flex: 1; }
+  .badge {
+    background: var(--red); color: white; font-size: 10px;
+    font-weight: 600; padding: 1px 6px; border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Botón volver al inicio en sidebar */
+  #sidebar-home-btn {
+    margin: 10px; flex-shrink: 0;
+  }
+  #sidebar-home-btn button {
+    width: 100%; padding: 11px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text2);
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    font-weight: 500; cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  #sidebar-home-btn button:hover {
+    background: var(--surface3); border-color: var(--red);
+    color: var(--text);
+  }
+
+  /* ── TOPBAR ── */
+  #topbar {
+    position: fixed; top: 0; left: 220px; right: 0;
+    height: 60px; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; z-index: 100;
+    gap: 16px;
+  }
+  #topbar-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 2px; color: var(--text);
+    flex: 1;
+  }
+  #topbar-title span { color: var(--red); }
+  #topbar-right {
+    display: flex; align-items: center; gap: 16px; flex-shrink: 0;
+  }
+  #topbar-date {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--text2); text-align: right; line-height: 1.5;
+  }
+
+  /* ── CONTENIDO PRINCIPAL ── */
+  #main-content {
+    margin-left: 220px;
+    padding-top: 60px;
+    flex: 1; min-height: 100vh;
+  }
+  main {
+    padding: 28px; max-width: 1200px; margin: 0 auto;
+  }
+
+  /* ── SECCIONES ── */
   .section { display: none; }
   .section.active { display: block; }
   #section-invoices, #section-clientes, #section-mercancias,
   #section-facturas, #section-pagos, #section-calc, #section-empresas { display: none; }
+
+  /* Mobile — sidebar colapsable */
+  @media (max-width: 768px) {
+    #sidebar { transform: translateX(-220px); }
+    #sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.5); }
+    #topbar { left: 0; }
+    #main-content { margin-left: 0; }
+    #mobile-menu-btn { display: flex !important; }
+  }
+  #mobile-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 199;
+  }
+  #mobile-overlay.show { display: block; }
+  #mobile-menu-btn {
+    display: none; align-items: center; justify-content: center;
+    width: 36px; height: 36px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; font-size: 18px; flex-shrink: 0;
+  }
+
   .section.active { display: block; }
   .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
   .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; line-height: 1; }
@@ -217,28 +391,101 @@ if ('serviceWorker' in navigator) {
 
 
 
-<header>
-  <div class="logo">
-    <div class="logo-icon">SiFa</div>
-    <div>
-      <div class="logo-text"><span>Si</span>Fa</div>
-      <div class="logo-sub" id="headerEmpresaNombre">Sistema Integral de Facturación y Asientos</div>
+<!-- OVERLAY MOBILE -->
+<div id="mobile-overlay" onclick="closeSidebar()"></div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside id="sidebar">
+
+  <!-- Brand SiFa -->
+  <div id="sidebar-brand">
+    <div id="sidebar-logo-icon">SiFa</div>
+    <div id="sidebar-brand-text">
+      <div class="name">SiFa</div>
+      <div class="sub">Facturación · Asientos</div>
     </div>
   </div>
-  <div class="header-date" id="headerDate"></div>
-</header>
 
-<nav id="mainNav">
-  <button class="nav-tab active" onclick="showSection('dashboard')" id="tab-dashboard"><span>📊</span> Dashboard</button>
-  <button class="nav-tab" onclick="showSection('clientes')" id="tab-clientes"><span>👤</span> Clientes <span class="badge" id="badge-clientes">0</span></button>
-  <button class="nav-tab" onclick="showSection('mercancias')" id="tab-mercancias"><span>📦</span> Productos <span class="badge" id="badge-mercancias">0</span></button>
-  <button class="nav-tab" onclick="showSection('facturas')" id="tab-facturas"><span>🧾</span> Facturas <span class="badge" id="badge-facturas">0</span></button>
-  <button class="nav-tab" onclick="showSection('pagos')" id="tab-pagos"><span>💰</span> Cobros <span class="badge" id="badge-pagos">0</span></button>
-  <button class="nav-tab" onclick="showSection('invoices')" id="tab-invoices"><span>📋</span> Invoices <span class="badge" id="badge-invoices">0</span></button>
-  <button class="nav-tab" onclick="showSection('calc')" id="tab-calc"><span>🧮</span> Precios <span class="badge" id="badge-calc">0</span></button>
-  <button class="nav-tab" onclick="showSection('empresas')" id="tab-empresas"><span>🏢</span> Empresas <span class="badge" id="badge-empresas">0</span></button>
-</nav>
+  <!-- Empresa activa -->
+  <div id="sidebar-empresa">
+    <div id="sidebar-empresa-label">Empresa activa</div>
+    <div id="sidebar-empresa-card" onclick="showSection('empresas')" title="Cambiar empresa">
+      <div id="sidebar-emp-logo">—</div>
+      <div id="sidebar-emp-info">
+        <div id="sidebar-emp-nombre">Sin empresa</div>
+        <div id="sidebar-emp-sub">Toca para seleccionar</div>
+      </div>
+      <span class="arrow">⇄</span>
+    </div>
+  </div>
 
+  <!-- Nav items -->
+  <nav id="sidebar-nav">
+    <div class="nav-section-label">Principal</div>
+    <button class="nav-tab active" onclick="showSection('dashboard')" id="tab-dashboard">
+      <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
+    </button>
+
+    <div class="nav-section-label">Gestión</div>
+    <button class="nav-tab" onclick="showSection('clientes')" id="tab-clientes">
+      <span class="nav-icon">👤</span><span class="nav-label">Clientes</span>
+      <span class="badge" id="badge-clientes">0</span>
+    </button>
+    <button class="nav-tab" onclick="showSection('mercancias')" id="tab-mercancias">
+      <span class="nav-icon">📦</span><span class="nav-label">Productos</span>
+      <span class="badge" id="badge-mercancias">0</span>
+    </button>
+
+    <div class="nav-section-label">Documentos</div>
+    <button class="nav-tab" onclick="showSection('facturas')" id="tab-facturas">
+      <span class="nav-icon">🧾</span><span class="nav-label">Facturas</span>
+      <span class="badge" id="badge-facturas">0</span>
+    </button>
+    <button class="nav-tab" onclick="showSection('pagos')" id="tab-pagos">
+      <span class="nav-icon">💰</span><span class="nav-label">Cobros</span>
+      <span class="badge" id="badge-pagos">0</span>
+    </button>
+    <button class="nav-tab" onclick="showSection('invoices')" id="tab-invoices">
+      <span class="nav-icon">📋</span><span class="nav-label">Invoices</span>
+      <span class="badge" id="badge-invoices">0</span>
+    </button>
+
+    <div class="nav-section-label">Herramientas</div>
+    <button class="nav-tab" onclick="showSection('calc')" id="tab-calc">
+      <span class="nav-icon">🧮</span><span class="nav-label">Precios</span>
+      <span class="badge" id="badge-calc">0</span>
+    </button>
+    <button class="nav-tab" onclick="showSection('empresas')" id="tab-empresas">
+      <span class="nav-icon">🏢</span><span class="nav-label">Empresas</span>
+      <span class="badge" id="badge-empresas">0</span>
+    </button>
+  </nav>
+
+  <!-- Botón inicio -->
+  <div id="sidebar-home-btn">
+    <button onclick="showSection('empresas')">
+      <span>⌂</span> Pantalla de inicio
+    </button>
+  </div>
+
+</aside>
+
+<!-- ═══ TOPBAR ═══ -->
+<div id="topbar">
+  <!-- Botón menú mobile -->
+  <button id="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+
+  <!-- Título sección activa -->
+  <div id="topbar-title">RESUMEN <span>GENERAL</span></div>
+
+  <!-- Derecha: fecha -->
+  <div id="topbar-right">
+    <div id="topbar-date" id="headerDate"></div>
+  </div>
+</div>
+
+<!-- ═══ CONTENIDO ═══ -->
+<div id="main-content">
 <main>
 
   <!-- ═══ PORTADA / SELECTOR DE EMPRESAS ═══ -->
@@ -280,6 +527,7 @@ if ('serviceWorker' in navigator) {
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button id="btnEditarEmpresa" class="btn btn-secondary btn-sm" onclick="editEmpresaActiva()" style="display:none">✏️ Editar empresa</button>
+        <button class="btn btn-secondary btn-sm" onclick="abrirRecuperacion()" title="Recuperar datos de versiones anteriores">🔄 Recuperar datos</button>
         <button class="btn btn-primary" id="btnCompartirDash" onclick="compartirDashboard()">⬆️ Exportar PDF</button>
       </div>
     </div>
@@ -369,6 +617,7 @@ if ('serviceWorker' in navigator) {
   </div>
 
 </main>
+</div><!-- /main-content -->
 
 <!-- MODAL CLIENTE -->
 <div class="modal-overlay" id="modalCliente">
@@ -925,33 +1174,66 @@ function toast(msg, type='success') {
 }
 
 // ═══ NAV ═══
+// ═══ SIDEBAR MOBILE ═══
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mobile-overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobile-overlay').classList.remove('show');
+}
+
+// ═══ NAV ═══
+const _SECTION_TITLES = {
+  dashboard: 'RESUMEN <span>GENERAL</span>',
+  clientes:  'GESTIÓN DE <span>CLIENTES</span>',
+  mercancias:'CATÁLOGO DE <span>PRODUCTOS</span>',
+  facturas:  'REGISTRO DE <span>FACTURAS</span>',
+  pagos:     'REGISTRO DE <span>COBROS</span>',
+  invoices:  'DOCUMENTOS <span>EMITIDOS</span>',
+  calc:      'FORMACIÓN DE <span>PRECIOS</span>',
+  empresas:  'SELECCIÓN DE <span>EMPRESA</span>',
+};
+
 function showSection(id) {
-  // Ocultar sección empresas (fixed overlay)
+  // Portada empresas → overlay fijo
   const secEmp = document.getElementById('section-empresas');
   secEmp.style.display = 'none';
 
-  // Ocultar/mostrar header y nav
-  const nav    = document.getElementById('mainNav');
-  const header = document.querySelector('header');
+  const sidebar    = document.getElementById('sidebar');
+  const topbar     = document.getElementById('topbar');
+  const mainContent = document.getElementById('main-content');
 
   if (id === 'empresas') {
-    // Portada: ocultar header/nav, mostrar overlay
-    nav.style.display    = 'none';
-    header.style.display = 'none';
     secEmp.style.display = 'flex';
     secEmp.style.flexDirection = 'column';
+    // Ocultar sidebar y topbar en portada
+    sidebar.style.display    = 'none';
+    topbar.style.display     = 'none';
+    mainContent.style.display = 'none';
     renderEmpresas();
+    closeSidebar();
     return;
   }
 
-  // Resto de secciones: mostrar header/nav
-  nav.style.display    = '';
-  header.style.display = '';
+  // Mostrar sidebar y topbar
+  sidebar.style.display    = '';
+  topbar.style.display     = '';
+  mainContent.style.display = '';
 
+  // Actualizar sección activa
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('section-' + id).classList.add('active');
-  document.getElementById('tab-' + id).classList.add('active');
+  const tab = document.getElementById('tab-' + id);
+  if (tab) tab.classList.add('active');
+
+  // Actualizar título topbar
+  const title = document.getElementById('topbar-title');
+  if (title) title.innerHTML = _SECTION_TITLES[id] || id.toUpperCase();
+
+  closeSidebar();
 
   if (id === 'dashboard')  renderDashboard();
   if (id === 'clientes')   renderClientes();
@@ -961,6 +1243,7 @@ function showSection(id) {
   if (id === 'invoices')   renderInvoices();
   if (id === 'calc')       renderCalc();
 }
+
 
 function toggleEmpresasDetalle() {} // ya no se usa
 
@@ -2055,36 +2338,36 @@ function rebuildEmpresaSelector() {
 
 // ── Aplicar tema de empresa activa: solo acento cambia, fondo siempre neutro ──
 function applyEmpresaTheme(emp) {
-  const pc=emp.colorPrimary||'#6366F1', sc=emp.colorSecondary||'#0EA5E9';
+  const pc = emp.colorPrimary   || '#6366F1';
+  const sc = emp.colorSecondary || '#0EA5E9';
   document.documentElement.style.setProperty('--red',      pc);
-  document.documentElement.style.setProperty('--red-dark', pc+'cc');
+  document.documentElement.style.setProperty('--red-dark', pc + 'cc');
   document.documentElement.style.setProperty('--blue',     sc);
-  document.documentElement.style.setProperty('--blue-dark',sc+'cc');
-  // Subtítulo header con nombre empresa
-  const sub=document.getElementById('headerEmpresaNombre');
-  if(sub) sub.textContent=emp.nombre||'Sistema Integral de Facturación y Asientos';
-  // Logo en header: si tiene logo propio lo muestra, si no icono SiFa con colores de empresa
-  const logoIcon=document.querySelector('.logo-icon');
-  if(emp.logo){
-    logoIcon.innerHTML=`<img src="${emp.logo}" style="width:36px;height:36px;object-fit:contain;border-radius:8px">`;
-    logoIcon.style.background='transparent';
-    logoIcon.style.boxShadow='none';
-  } else {
-    logoIcon.innerHTML='SiFa';
-    logoIcon.style.background=`linear-gradient(135deg,${pc},${sc})`;
-    logoIcon.style.boxShadow=`0 4px 14px ${pc}44`;
+  document.documentElement.style.setProperty('--blue-dark',sc + 'cc');
+
+  // Sidebar: empresa activa
+  const empLogo   = document.getElementById('sidebar-emp-logo');
+  const empNombre = document.getElementById('sidebar-emp-nombre');
+  const empSub    = document.getElementById('sidebar-emp-sub');
+  const logoIcon  = document.getElementById('sidebar-logo-icon');
+
+  if (empNombre) empNombre.textContent = emp.nombre;
+  if (empSub)    empSub.textContent    = emp.ein || emp.sub || '';
+  if (empLogo) {
+    if (emp.logo) {
+      empLogo.innerHTML = `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:5px">`;
+      empLogo.style.background = '#0A0A0F';
+    } else {
+      empLogo.innerHTML = emp.nombre.split(' ').map(w=>w[0]).slice(0,2).join('');
+      empLogo.style.background = `linear-gradient(135deg,${pc},${sc})`;
+    }
   }
-  // Botón cambiar empresa
-  let btn=document.getElementById('btnCambiarEmpresa');
-  if(!btn){
-    btn=document.createElement('button');
-    btn.id='btnCambiarEmpresa';
-    btn.style.cssText='background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:8px;font-size:11px;cursor:pointer;font-family:DM Sans,sans-serif;margin-right:12px;transition:all .2s';
-    document.getElementById('headerDate').parentNode.insertBefore(btn,document.getElementById('headerDate'));
+  if (logoIcon) {
+    logoIcon.style.background = `linear-gradient(135deg,${pc},${sc})`;
+    logoIcon.style.boxShadow  = `0 4px 14px ${pc}55`;
   }
-  btn.textContent = '⇄ ' + emp.nombre.split(' ')[0];
-  btn.onclick = () => showSection('empresas');
 }
+
 
 
 // ═══ BADGES ═══
@@ -2100,12 +2383,100 @@ function updateBadges() {
 
 // ═══ DATE ═══
 function updateDate() {
-  const now=new Date();
-  document.getElementById('headerDate').innerHTML=now.toLocaleDateString('es',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).toUpperCase()+'<br>'+now.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+  const now = new Date();
+  const fecha = now.toLocaleDateString('es', {weekday:'long', day:'numeric', month:'long', year:'numeric'}).toUpperCase();
+  const hora  = now.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'});
+  const el = document.getElementById('topbar-date');
+  if (el) el.innerHTML = `${fecha}<br><span style="color:var(--text);font-size:13px;font-weight:600">${hora}</span>`;
 }
-updateDate(); setInterval(updateDate,60000);
+updateDate(); setInterval(updateDate, 60000);
 
-// ═══ INIT ═══
+// ═══ HERRAMIENTA DE RECUPERACIÓN DE DATOS ═══
+function abrirRecuperacion() {
+  // Buscar todas las claves de localStorage que contengan datos de SiFa
+  const claves = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    // Buscar claves con datos relevantes
+    if (k.match(/(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos)$/)) {
+      try {
+        const val = JSON.parse(localStorage.getItem(k));
+        if (Array.isArray(val) && val.length > 0) {
+          claves.push({ clave: k, cantidad: val.length, tipo: k.split(/clientes|mercancias|facturas|pagos|invoices|calculos|anticipos/).pop() || k });
+        }
+      } catch(e) {}
+    }
+  }
+
+  if (!claves.length) {
+    toast('No se encontraron datos guardados anteriormente', 'error');
+    return;
+  }
+
+  // Agrupar por prefijo
+  const prefijos = {};
+  claves.forEach(c => {
+    const match = c.clave.match(/^(.+?)(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos)$/);
+    if (match) {
+      const pre = match[1], tipo = match[2];
+      if (!prefijos[pre]) prefijos[pre] = {};
+      prefijos[pre][tipo] = c.cantidad;
+    }
+  });
+
+  const lista = Object.entries(prefijos).map(([pre, tipos]) =>
+    `<div style="background:var(--surface2);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text)">${pre}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">${Object.entries(tipos).map(([t,n])=>`${n} ${t}`).join(' · ')}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="recuperarPrefijo('${pre}')">Recuperar en empresa activa</button>
+    </div>`
+  ).join('');
+
+  // Mostrar en un modal de alerta
+  const div = document.createElement('div');
+  div.id = 'modalRecuperacion';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  div.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:6px">RECUPERAR <span style="color:var(--red)">DATOS</span></div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:20px">Se encontraron estos conjuntos de datos en tu dispositivo. Selecciona el que corresponde a La Catedral (u otra empresa) para copiarlo al prefijo activo.</div>
+    ${lista}
+    <div style="margin-top:16px;text-align:right">
+      <button class="btn btn-secondary" onclick="document.getElementById('modalRecuperacion').remove()">Cerrar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(div);
+}
+
+function recuperarPrefijo(prefijo) {
+  if (!empresaActual) { toast('Primero activa una empresa destino', 'error'); return; }
+  const dest = empresaActual.dbPrefix;
+  if (prefijo === dest) { toast('El prefijo origen y destino son iguales', 'error'); return; }
+
+  const tipos = ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos'];
+  let recuperados = 0;
+  tipos.forEach(t => {
+    const val = localStorage.getItem(prefijo + t);
+    if (val) {
+      // Solo copiar si el destino está vacío o el usuario confirma
+      const destVal = localStorage.getItem(dest + t);
+      const destArr = destVal ? JSON.parse(destVal) : [];
+      if (destArr.length > 0) return; // no machacar si ya tiene datos
+      localStorage.setItem(dest + t, val);
+      recuperados++;
+    }
+  });
+
+  // Recargar datos en memoria
+  cargarDatosEmpresa(empresaActual);
+  updateBadges();
+  renderDashboard();
+  document.getElementById('modalRecuperacion').remove();
+  toast(`✅ ${recuperados} colecciones recuperadas en ${empresaActual.nombre}`);
+}
+
+
 initEmpresas();
 updateBadges();
 // Siempre arranca en la sección de empresas
