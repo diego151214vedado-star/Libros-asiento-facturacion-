@@ -111,6 +111,9 @@ if ('serviceWorker' in navigator) {
   main { padding: 24px; max-width: 1200px; margin: 0 auto; }
   .section { display: none; }
   .section.active { display: block; }
+  #section-invoices, #section-clientes, #section-mercancias,
+  #section-facturas, #section-pagos, #section-calc, #section-empresas { display: none; }
+  .section.active { display: block; }
   .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
   .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; line-height: 1; }
   .page-title span { color: var(--red); }
@@ -239,10 +242,10 @@ if ('serviceWorker' in navigator) {
 <main>
 
   <!-- ═══ PORTADA / SELECTOR DE EMPRESAS ═══ -->
-  <div class="section" id="section-empresas" style="padding:0;margin:0;max-width:100%">
+  <div class="section" id="section-empresas" style="padding:0;margin:0;max-width:100%;position:fixed;inset:0;overflow-y:auto;z-index:50;background:#0A0A0F;display:none">
 
     <!-- HERO PORTADA -->
-    <div style="min-height:calc(100vh - 120px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 32px;background:radial-gradient(ellipse 80% 60% at 50% -10%,#16163A 0%,#0A0A0F 70%)">
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 32px;background:radial-gradient(ellipse 80% 60% at 50% -10%,#16163A 0%,#0A0A0F 70%)")
 
       <!-- Logo enorme -->
       <div style="margin-bottom:40px;text-align:center;user-select:none">
@@ -265,30 +268,6 @@ if ('serviceWorker' in navigator) {
       </button>
 
     </div><!-- /hero -->
-
-    <!-- GESTIÓN DETALLADA (colapsable) -->
-    <div id="empresasDetalle" style="display:none;padding:32px 24px;max-width:1200px;margin:0 auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-        <div>
-          <div class="page-title" style="font-size:26px">GESTIÓN DE <span>EMPRESAS</span></div>
-          <div class="page-sub">Editar, eliminar y configurar datos de empresa</div>
-        </div>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-secondary btn-sm" onclick="toggleEmpresasDetalle(false)">↑ Ocultar</button>
-          <button class="btn btn-primary" onclick="openModal('modalEmpresa')">＋ Nueva</button>
-        </div>
-      </div>
-      <div id="empresasGrid" class="cards-grid"></div>
-    </div>
-
-    <!-- Toggle gestión -->
-    <div id="empresasDetalleToggle" style="text-align:center;padding:12px 0 24px;border-top:1px solid #14141E">
-      <button onclick="toggleEmpresasDetalle(true)"
-        style="background:none;border:none;color:#333348;font-size:11px;cursor:pointer;letter-spacing:2px;font-family:'DM Sans',sans-serif;text-transform:uppercase;padding:8px 16px;border-radius:8px;transition:color .2s"
-        onmouseover="this.style.color='var(--text2)'" onmouseout="this.style.color='#333348'">
-        ▼ &nbsp; Gestionar empresas
-      </button>
-    </div>
 
   </div><!-- /section-empresas -->
 
@@ -377,15 +356,18 @@ if ('serviceWorker' in navigator) {
   </div>
 
 
+  <!-- INVOICES -->
+  <div class="section" id="section-invoices">
     <div class="page-header">
-      <div><div class="page-title">CREAR <span>INVOICE</span></div><div class="page-sub">Genera y comparte documentos comerciales</div></div>
+      <div><div class="page-title">DOCUMENTOS <span>EMITIDOS</span></div><div class="page-sub">Invoices, facturas, conduce y más</div></div>
       <button class="btn btn-primary" onclick="openModal('modalInvoice')">＋ Nuevo Documento</button>
     </div>
     <div class="table-wrapper">
-      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Tipo</th><th>Cliente / Proveedor</th><th>Total</th><th>Acciones</th></tr></thead>
+      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Tipo</th><th>Emisor</th><th>Cliente / Proveedor</th><th>Total</th><th>Acciones</th></tr></thead>
       <tbody id="invoicesTable"></tbody></table>
     </div>
   </div>
+
 </main>
 
 <!-- MODAL CLIENTE -->
@@ -481,6 +463,15 @@ if ('serviceWorker' in navigator) {
 <div class="modal-overlay" id="modalInvoice" style="z-index:250;overflow-y:auto">
   <div class="modal" style="max-width:700px">
     <input type="hidden" id="inv_id">
+
+    <!-- Empresa emisora -->
+    <div style="background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);white-space:nowrap">Empresa emisora</div>
+      <select id="inv_empresa_emisora" onchange="onChangeEmpresaEmisora()" style="flex:1;min-width:200px;font-weight:600;font-size:13px">
+        <option value="">— Selecciona empresa emisora —</option>
+      </select>
+      <div id="inv_emisora_badge" style="display:none;font-size:11px;color:var(--text2)"></div>
+    </div>
 
     <!-- Tipo + título editable + número -->
     <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap">
@@ -935,21 +926,32 @@ function toast(msg, type='success') {
 
 // ═══ NAV ═══
 function showSection(id) {
+  // Ocultar sección empresas (fixed overlay)
+  const secEmp = document.getElementById('section-empresas');
+  secEmp.style.display = 'none';
+
+  // Ocultar/mostrar header y nav
+  const nav    = document.getElementById('mainNav');
+  const header = document.querySelector('header');
+
+  if (id === 'empresas') {
+    // Portada: ocultar header/nav, mostrar overlay
+    nav.style.display    = 'none';
+    header.style.display = 'none';
+    secEmp.style.display = 'flex';
+    secEmp.style.flexDirection = 'column';
+    renderEmpresas();
+    return;
+  }
+
+  // Resto de secciones: mostrar header/nav
+  nav.style.display    = '';
+  header.style.display = '';
+
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('section-' + id).classList.add('active');
   document.getElementById('tab-' + id).classList.add('active');
-
-  // Ocultar nav y minimizar header en la portada de empresas
-  const nav    = document.getElementById('mainNav');
-  const header = document.querySelector('header');
-  if (id === 'empresas') {
-    nav.style.display = 'none';
-    header.style.display = 'none';
-  } else {
-    nav.style.display = '';
-    header.style.display = '';
-  }
 
   if (id === 'dashboard')  renderDashboard();
   if (id === 'clientes')   renderClientes();
@@ -958,14 +960,9 @@ function showSection(id) {
   if (id === 'pagos')      renderPagos();
   if (id === 'invoices')   renderInvoices();
   if (id === 'calc')       renderCalc();
-  if (id === 'empresas')   renderEmpresas();
 }
 
-function toggleEmpresasDetalle(show) {
-  document.getElementById('empresasDetalle').style.display = show ? 'block' : 'none';
-  document.getElementById('empresasDetalleToggle').style.display = show ? 'none' : 'block';
-  if (show) renderEmpresas();
-}
+function toggleEmpresasDetalle() {} // ya no se usa
 
 
 // ═══ MODAL ═══
@@ -1284,6 +1281,19 @@ function getTipoLabel(key) {
   return t ? t.label : 'Invoice';
 }
 
+function onChangeEmpresaEmisora() {
+  const key = document.getElementById('inv_empresa_emisora').value;
+  const badge = document.getElementById('inv_emisora_badge');
+  const todas = getTodasEmpresas();
+  const emp = todas[key];
+  if (emp) {
+    badge.style.display = 'block';
+    badge.textContent = emp.ein ? emp.ein : emp.sub || '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 // Consecutivo independiente por tipo y empresa
 function getNextNumero(tipoKey) {
   const prefix = empresaActual ? empresaActual.dbPrefix : 'sifa_';
@@ -1329,6 +1339,17 @@ function guardarNuevoTipoDoc() {
 }
 
 function populateInvoiceModal() {
+  // Poblar selector de empresa emisora con todas las empresas
+  const selEmisor = document.getElementById('inv_empresa_emisora');
+  const todas = getTodasEmpresas();
+  const actKey = localStorage.getItem('dal_empresa_actual');
+  selEmisor.innerHTML = '<option value="">— Selecciona empresa emisora —</option>' +
+    Object.entries(todas).map(([key, emp]) =>
+      `<option value="${key}" ${key === actKey ? 'selected' : ''}>${emp.nombre}</option>`
+    ).join('');
+  // Disparar badge de empresa activa
+  onChangeEmpresaEmisora();
+
   // Tipos custom en el select
   const sel = document.getElementById('inv_tipo');
   [...sel.options].forEach(o => { if (!['I','F','O','C','__nuevo__'].includes(o.value)) o.remove(); });
@@ -1424,6 +1445,10 @@ function getInvoiceData() {
   const clienteId = document.getElementById('inv_cliente').value;
   const cliente   = clientes.find(c => c.id === clienteId) || null;
 
+  // Empresa emisora — puede ser distinta a la activa
+  const emisoraKey = document.getElementById('inv_empresa_emisora').value;
+  const emisora    = getTodasEmpresas()[emisoraKey] || empresaActual || null;
+
   const lineas = [];
   [1,2,3,4].forEach(i => {
     const pid   = document.getElementById('inv_prod_'  + i).value;
@@ -1450,6 +1475,7 @@ function getInvoiceData() {
     id:            document.getElementById('inv_id').value || uid(),
     tipoKey, titulo, fecha, numero,
     clienteId,     moneda:       document.getElementById('inv_moneda').value,
+    emisoraKey,    emisora,
     proveedor:     document.getElementById('inv_proveedor').value.trim(),
     lineas, subtotal, flete, seguro, total,
     consignatario: consSel === '__nuevo__' ? document.getElementById('inv_consignatario_custom').value.trim() : consSel,
@@ -1491,7 +1517,7 @@ function fmtInvDate(d) {
 
 function abrirInvoicePDF(data) {
   const c   = data.cliente || clientes.find(x => x.id === data.clienteId);
-  const emp = empresaActual || {};
+  const emp = data.emisora || empresaActual || {};
   const pc  = emp.colorPrimary   || '#6366F1';
   const sc  = emp.colorSecondary || '#0EA5E9';
 
@@ -1600,16 +1626,20 @@ ${notasBlock}
 function renderInvoices() {
   const tbody = document.getElementById('invoicesTable');
   if (!invoices.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin documentos aún</div></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin documentos aún</div></div></td></tr>`;
     return;
   }
+  const todas = getTodasEmpresas();
   tbody.innerHTML = [...invoices].sort((a,b) => a.fecha < b.fecha ? -1 : 1).map(inv => {
     const c = clientes.find(x => x.id === inv.clienteId);
     const label = inv.titulo || getTipoLabel(inv.tipoKey || 'I');
+    const emisora = inv.emisora || (inv.emisoraKey ? todas[inv.emisoraKey] : null) || empresaActual;
+    const emisoraNombre = emisora ? emisora.nombre.split(' ').slice(0,2).join(' ') : '—';
     return `<tr>
       <td>${fmtDate(inv.fecha)}</td>
       <td class="mono" style="font-weight:700">${inv.numero}</td>
       <td style="font-size:11px;color:var(--text2)">${label}</td>
+      <td style="font-size:11px">${emisoraNombre}</td>
       <td>${c ? c.nombre : (inv.proveedor || '—')}</td>
       <td class="mono amount-pos">${fmtUSD(inv.total)}</td>
       <td style="white-space:nowrap">
@@ -1960,83 +1990,38 @@ function deleteEmpresa(key) {
 }
 
 // ── Tarjetas en sección Empresas ──
+// ── Portada de empresas — solo tarjetas y botón agregar ──
 function renderEmpresas() {
-  const grid    = document.getElementById('empresasGrid'); if (!grid) return;
   const cardsTop = document.getElementById('empresasCards');
-  const todas   = getTodasEmpresas();
-  const actKey  = localStorage.getItem('dal_empresa_actual');
+  if (!cardsTop) return;
+  const todas  = getTodasEmpresas();
+  const actKey = localStorage.getItem('dal_empresa_actual');
 
-  // ── PORTADA: tarjetas grandes ──
-  if (cardsTop) {
-    cardsTop.innerHTML = Object.entries(todas).map(([key, emp]) => {
-      const isActiva = key === actKey;
-      const pc = emp.colorPrimary   || '#6366F1';
-      const sc = emp.colorSecondary || '#0EA5E9';
-      const ac = emp.colorAccent    || '#22C55E';
-
-      const logoHTML = emp.logo
-        ? `<img src="${emp.logo}" style="width:110px;height:72px;object-fit:contain;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4))">`
-        : `<div style="width:80px;height:56px;background:linear-gradient(135deg,${pc},${sc});border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:16px;box-shadow:0 6px 20px ${pc}44">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
-
-      const dots = `<div style="display:flex;gap:5px;justify-content:center;margin-top:10px">
-        <span style="width:8px;height:8px;border-radius:50%;background:${pc};display:inline-block"></span>
-        <span style="width:8px;height:8px;border-radius:50%;background:${sc};display:inline-block"></span>
-        <span style="width:8px;height:8px;border-radius:50%;background:${ac};display:inline-block"></span>
-      </div>`;
-
-      const btnActiva = isActiva
-        ? `<div style="margin-top:14px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:${pc};font-weight:700">✓ Activa — toca para entrar</div>`
-        : `<div style="margin-top:14px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#444455">Toca para activar</div>`;
-
-      return `<div onclick="seleccionarEmpresaDirecta('${key}')"
-        style="background:${isActiva ? pc+'10' : 'var(--surface)'};border:2px solid ${isActiva ? pc : '#1E1E28'};border-radius:20px;padding:28px 24px;text-align:center;min-width:200px;max-width:240px;width:220px;cursor:pointer;transition:all .25s;position:relative"
-        onmouseover="this.style.borderColor='${pc}';this.style.background='${pc}18';this.style.transform='translateY(-3px)'"
-        onmouseout="this.style.borderColor='${isActiva ? pc : '#1E1E28'}';this.style.background='${isActiva ? pc+'10' : 'var(--surface)'}';this.style.transform='translateY(0)'">
-        <button class="emp-edit-btn" onclick="event.stopPropagation();editEmpresaModal('${key}')">✏️</button>
-        ${logoHTML}
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#EEEEF2;margin-bottom:3px;line-height:1.2">${emp.nombre}</div>
-        <div style="font-size:10px;color:#55556A;line-height:1.5">${emp.ein || emp.sub || ''}</div>
-        ${dots}
-        ${btnActiva}
-      </div>`;
-    }).join('');
-  }
-
-  // ── GESTIÓN DETALLADA (grid inferior) ──
-  if (!Object.keys(todas).length) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏢</div><div class="empty-text">Sin empresas registradas</div></div>`;
-    return;
-  }
-  grid.innerHTML = Object.entries(todas).map(([key, emp]) => {
+  cardsTop.innerHTML = Object.entries(todas).map(([key, emp]) => {
     const isActiva = key === actKey;
     const pc = emp.colorPrimary   || '#6366F1';
     const sc = emp.colorSecondary || '#0EA5E9';
     const ac = emp.colorAccent    || '#22C55E';
-    const logoEl = emp.logo
-      ? `<img src="${emp.logo}" style="width:52px;height:36px;object-fit:contain;border-radius:6px">`
-      : `<div style="width:52px;height:36px;background:linear-gradient(135deg,${pc},${sc});border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
-    const palette = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${pc};margin-right:3px"></span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sc};margin-right:3px"></span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${ac}"></span>`;
-    return `<div class="card" style="border-color:${isActiva ? pc : 'var(--border)'}">
-      <div class="card-header">
-        <div style="display:flex;align-items:center;gap:10px">${logoEl}
-          <div><div class="card-name" style="font-size:13px">${emp.nombre}</div>
-          <div style="font-size:10px;color:var(--text2);margin-top:1px">${emp.ein || emp.sub || ''}</div></div>
-        </div>
-        <div class="card-actions">
-          ${!isActiva ? `<button class="btn btn-sm" style="background:${pc};color:white;border:none" onclick="seleccionarEmpresaDirecta('${key}')">▶ Activar</button>` : ''}
-          <button class="btn btn-secondary btn-sm" onclick="editEmpresaModal('${key}')">✏️</button>
-          ${!isActiva ? `<button class="btn btn-danger btn-sm" onclick="deleteEmpresa('${key}')">✕</button>` : ''}
-        </div>
-      </div>
-      ${emp.direccion ? `<div class="card-row"><span class="card-label">Dirección</span><span class="card-value" style="font-size:11px;text-align:right">${emp.direccion}</span></div>` : ''}
-      ${emp.banco     ? `<div class="card-row"><span class="card-label">Banco</span><span class="card-value" style="font-size:11px">${emp.banco}</span></div>` : ''}
-      ${emp.gerente   ? `<div class="card-row"><span class="card-label">Firmante</span><span class="card-value" style="font-size:11px">${emp.gerente}</span></div>` : ''}
-      <div class="card-row"><span class="card-label">Prefijo BD</span><span class="card-value mono">${emp.dbPrefix}</span></div>
-      <div class="card-row"><span class="card-label">Paleta</span><span>${palette}</span></div>
-      ${isActiva ? `<div style="margin-top:10px;padding:6px 10px;background:${pc}22;border-radius:8px;font-size:11px;color:${pc};font-weight:700;text-align:center">✓ EMPRESA ACTIVA</div>` : ''}
+    const logoHTML = emp.logo
+      ? `<img src="${emp.logo}" style="width:110px;height:72px;object-fit:contain;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4))">`
+      : `<div style="width:80px;height:56px;background:linear-gradient(135deg,${pc},${sc});border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:16px;box-shadow:0 6px 20px ${pc}44">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
+    const dots = `<div style="display:flex;gap:5px;justify-content:center;margin-top:10px"><span style="width:8px;height:8px;border-radius:50%;background:${pc};display:inline-block"></span><span style="width:8px;height:8px;border-radius:50%;background:${sc};display:inline-block"></span><span style="width:8px;height:8px;border-radius:50%;background:${ac};display:inline-block"></span></div>`;
+    const nota = isActiva
+      ? `<div style="margin-top:12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:${pc};font-weight:700">✓ Activa</div>`
+      : `<div style="margin-top:12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#444455">Toca para activar</div>`;
+    return `<div onclick="seleccionarEmpresaDirecta('${key}')"
+      style="background:${isActiva?pc+'10':'var(--surface)'};border:2px solid ${isActiva?pc:'#1E1E28'};border-radius:20px;padding:28px 24px;text-align:center;min-width:200px;max-width:240px;width:220px;cursor:pointer;transition:all .25s;position:relative"
+      onmouseover="this.style.borderColor='${pc}';this.style.background='${pc}18';this.style.transform='translateY(-3px)'"
+      onmouseout="this.style.borderColor='${isActiva?pc:'#1E1E28'}';this.style.background='${isActiva?pc+'10':'var(--surface)'}';this.style.transform='translateY(0)'">
+      <button class="emp-edit-btn" onclick="event.stopPropagation();editEmpresaModal('${key}')" title="Editar">✏️</button>
+      ${logoHTML}
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#EEEEF2;margin-bottom:3px;line-height:1.2">${emp.nombre}</div>
+      <div style="font-size:10px;color:#55556A;line-height:1.5">${emp.ein||emp.sub||''}</div>
+      ${dots}${nota}
     </div>`;
   }).join('');
 }
+
 
 // ── Selector de bienvenida — fondo siempre neutro, tarjetas con colores propios ──
 function rebuildEmpresaSelector() {
