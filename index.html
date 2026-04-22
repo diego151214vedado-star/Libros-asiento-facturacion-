@@ -301,7 +301,25 @@ if ('serviceWorker' in navigator) {
   .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 8px; }
   .btn-danger { background: transparent; color: var(--pink); border: 1px solid var(--pink); }
   .btn-danger:hover { background: rgba(255,107,107,.1); }
-  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  /* ── LISTAS DE FILAS (reemplaza cards-grid) ── */
+  .cards-grid { display: flex; flex-direction: column; gap: 0; margin-bottom: 24px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .list-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    transition: background .15s; cursor: default;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row:hover { background: var(--surface2); }
+  .list-row-icon { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+  .list-row-main { flex: 1; min-width: 0; }
+  .list-row-name { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list-row-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .list-row-meta { display: flex; gap: 20px; align-items: center; flex-shrink: 0; }
+  .list-row-badge { font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; white-space: nowrap; }
+  .list-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  /* Mantener card y card-* para compatibilidad con secciones que aún las usan */
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: border-color .2s; }
   .card:hover { border-color: var(--red); }
   .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -1108,15 +1126,13 @@ function cargarDatosEmpresa(emp) {
   empresaActual = emp;
   window._empresaPrefix = emp.dbPrefix;
   const p = emp.dbPrefix;
-  clientes   = JSON.parse(localStorage.getItem(p+'clientes')  ||'[]');
-  mercancias = JSON.parse(localStorage.getItem(p+'mercancias')||'[]');
-  facturas   = JSON.parse(localStorage.getItem(p+'facturas')  ||'[]');
-  pagos      = JSON.parse(localStorage.getItem(p+'pagos')     ||'[]');
-  // Invoices: cargar globales (todos los documentos de todas las empresas)
-  const globalInv = localStorage.getItem('sifa_invoices_global');
-  invoices   = globalInv ? JSON.parse(globalInv) : JSON.parse(localStorage.getItem(p+'invoices')||'[]');
-  calculos   = JSON.parse(localStorage.getItem(p+'calculos')  ||'[]');
-  anticipios = JSON.parse(localStorage.getItem(p+'anticipos') ||'[]');
+  clientes   = JSON.parse(localStorage.getItem(p + 'clientes')   || '[]');
+  mercancias = JSON.parse(localStorage.getItem(p + 'mercancias') || '[]');
+  facturas   = JSON.parse(localStorage.getItem(p + 'facturas')   || '[]');
+  pagos      = JSON.parse(localStorage.getItem(p + 'pagos')      || '[]');
+  invoices   = JSON.parse(localStorage.getItem(p + 'invoices')   || '[]');
+  calculos   = JSON.parse(localStorage.getItem(p + 'calculos')   || '[]');
+  anticipios = JSON.parse(localStorage.getItem(p + 'anticipos')  || '[]');
 }
 
 // ═══ SELECCIONAR EMPRESA ═══
@@ -1156,13 +1172,7 @@ function save() {
   localStorage.setItem(p+'pagos',      JSON.stringify(pagos));
 }
 function saveInvoicesDB() {
-  // Los invoices son globales — no dependen de la empresa activa
-  // sino de la empresa emisora de cada documento
-  localStorage.setItem('sifa_invoices_global', JSON.stringify(invoices));
-  // También guardar por empresa emisora para compatibilidad
-  if (empresaActual) localStorage.setItem(empresaActual.dbPrefix + 'invoices', JSON.stringify(
-    invoices.filter(inv => !inv.emisoraKey || inv.emisoraKey === localStorage.getItem('dal_empresa_actual'))
-  ));
+  if (empresaActual) localStorage.setItem(empresaActual.dbPrefix + 'invoices', JSON.stringify(invoices));
 }
 function saveCalcDB()     { if(empresaActual) localStorage.setItem(empresaActual.dbPrefix+'calculos',JSON.stringify(calculos)); }
 function saveAnticipos()  { if(empresaActual) localStorage.setItem(empresaActual.dbPrefix+'anticipos',JSON.stringify(anticipios)); }
@@ -1310,12 +1320,31 @@ function deleteCliente(id) {
   save();renderClientes();updateBadges();toast('Cliente eliminado');
 }
 function renderClientes() {
-  const grid=document.getElementById('clientesGrid');
-  if(!clientes.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">👤</div><div class="empty-text">Sin clientes aún</div><div class="empty-sub">Agrega tu primer cliente</div></div>`;return;}
-  grid.innerHTML=clientes.map(c=>{
-    const tf=facturas.filter(f=>f.clienteId===c.id).length;
-    const sd=facturas.filter(f=>f.clienteId===c.id).reduce((s,f)=>{const sal=getSaldo(f.id);return s+(sal>0?sal:0);},0);
-    return `<div class="card"><div class="card-header"><div class="card-name">👤 ${c.nombre}</div><div class="card-actions"><button class="btn btn-blue btn-sm" onclick="compartirConciliacionDirecta('${c.id}')">📄</button><button class="btn btn-secondary btn-sm" onclick="editCliente('${c.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteCliente('${c.id}')">✕</button></div></div>${c.cif?`<div class="card-row"><span class="card-label">CIF</span><span class="card-value mono">${c.cif}</span></div>`:''} ${c.pais?`<div class="card-row"><span class="card-label">País</span><span class="card-value">${c.pais}</span></div>`:''} ${c.telefono?`<div class="card-row"><span class="card-label">Tel.</span><span class="card-value mono">${c.telefono}</span></div>`:''}<div class="card-row"><span class="card-label">Facturas</span><span class="card-value">${tf}</span></div>${sd>0?`<div class="card-row"><span class="card-label">Saldo a deber</span><span class="card-value amount-neg">${fmtUSD(sd)}</span></div>`:''}</div>`;
+  const grid = document.getElementById('clientesGrid');
+  if (!clientes.length) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">Sin clientes aún</div><div class="empty-sub">Agrega tu primer cliente</div></div>`;
+    return;
+  }
+  grid.innerHTML = clientes.map(c => {
+    const tf = facturas.filter(f => f.clienteId === c.id).length;
+    const sd = facturas.filter(f => f.clienteId === c.id).reduce((s,f) => { const sal=getSaldo(f.id); return s+(sal>0?sal:0); }, 0);
+    const meta = [c.pais, c.cif, c.telefono].filter(Boolean).join(' · ');
+    return `<div class="list-row">
+      <div class="list-row-icon">👤</div>
+      <div class="list-row-main">
+        <div class="list-row-name">${c.nombre}</div>
+        ${meta ? `<div class="list-row-sub">${meta}</div>` : ''}
+      </div>
+      <div class="list-row-meta">
+        <span class="list-row-badge">${tf} facturas</span>
+        ${sd > 0 ? `<span class="list-row-badge amount-neg">${fmtUSD(sd)}</span>` : ''}
+      </div>
+      <div class="list-row-actions">
+        <button class="btn btn-blue btn-sm" onclick="compartirConciliacionDirecta('${c.id}')">📄</button>
+        <button class="btn btn-secondary btn-sm" onclick="editCliente('${c.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCliente('${c.id}')">✕</button>
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -1343,9 +1372,26 @@ function deleteMercancia(id) {
   mercancias=mercancias.filter(m=>m.id!==id); save();renderMercancias();updateBadges();toast('Producto eliminado');
 }
 function renderMercancias() {
-  const grid=document.getElementById('mercanciasGrid');
-  if(!mercancias.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📦</div><div class="empty-text">Sin productos aún</div><div class="empty-sub">Agrega productos o servicios al catálogo</div></div>`;return;}
-  grid.innerHTML=mercancias.map(m=>`<div class="card"><div class="card-header"><div class="card-name">${m.categoria==='Pollo'?'🐔':m.categoria==='Cerdo'?'🐷':m.categoria==='Res'?'🐄':m.categoria==='Servicio'?'🔧':m.categoria==='Alimentos'?'🥩':'📦'} ${m.nombre}</div><div class="card-actions"><button class="btn btn-secondary btn-sm" onclick="editMercancia('${m.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteMercancia('${m.id}')">✕</button></div></div>${m.codigo?`<div class="card-row"><span class="card-label">Código</span><span class="card-value mono">${m.codigo}</span></div>`:''}<div class="card-row"><span class="card-label">Unidad</span><span class="card-value">${m.unidad}</span></div><div class="card-row"><span class="card-label">Precio base</span><span class="card-value mono">${fmtUSD(m.precio)}</span></div><div class="card-row"><span class="card-label">Categoría</span><span class="card-value">${m.categoria||'—'}</span></div></div>`).join('');
+  const grid = document.getElementById('mercanciasGrid');
+  if (!mercancias.length) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Sin productos aún</div><div class="empty-sub">Agrega productos o servicios al catálogo</div></div>`;
+    return;
+  }
+  const iconCat = c => c==='Pollo'?'🐔':c==='Cerdo'?'🐷':c==='Res'?'🐄':c==='Servicio'?'🔧':c==='Alimentos'?'🥩':'📦';
+  grid.innerHTML = mercancias.map(m => `<div class="list-row">
+    <div class="list-row-icon">${iconCat(m.categoria)}</div>
+    <div class="list-row-main">
+      <div class="list-row-name">${m.nombre}</div>
+      <div class="list-row-sub">${m.codigo ? m.codigo + ' · ' : ''}${m.unidad} · ${m.categoria||''}</div>
+    </div>
+    <div class="list-row-meta">
+      <span class="list-row-badge amount-pos">${fmtUSD(m.precio)}</span>
+    </div>
+    <div class="list-row-actions">
+      <button class="btn btn-secondary btn-sm" onclick="editMercancia('${m.id}')">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteMercancia('${m.id}')">✕</button>
+    </div>
+  </div>`).join('');
 }
 
 // ═══ FACTURAS ═══
@@ -2479,6 +2525,12 @@ function recuperarPrefijo(prefijo) {
 initEmpresas();
 updateDate();
 setInterval(updateDate, 60000);
+
+// Limpiar clave global de invoices si quedó de versión anterior
+// (los datos ya están guardados por prefijo de empresa)
+if (localStorage.getItem('sifa_invoices_global')) {
+  localStorage.removeItem('sifa_invoices_global');
+}
 
 const _savedKey = localStorage.getItem('dal_empresa_actual');
 if (_savedKey && getEmpresa(_savedKey)) {
