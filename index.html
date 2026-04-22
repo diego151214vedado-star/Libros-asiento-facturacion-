@@ -550,6 +550,9 @@ if ('serviceWorker' in navigator) {
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button id="btnEditarEmpresa" class="btn btn-secondary btn-sm" onclick="editEmpresaActiva()" style="display:none">✏️ Editar empresa</button>
         <button class="btn btn-secondary btn-sm" onclick="abrirRecuperacion()" title="Recuperar datos de versiones anteriores">🔄 Recuperar datos</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportarBackup()" title="Descargar copia de seguridad">💾 Backup</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('inputImportBackup').click()" title="Restaurar desde copia de seguridad">📂 Restaurar</button>
+        <input type="file" id="inputImportBackup" accept=".json" style="display:none" onchange="importarBackup(this)">
         <button class="btn btn-primary" id="btnCompartirDash" onclick="compartirDashboard()">⬆️ Exportar PDF</button>
       </div>
     </div>
@@ -2531,6 +2534,147 @@ function recuperarPrefijo(prefijo) {
 }
 
 
+// ═══ BACKUP / RESTORE ═══
+
+function exportarBackup() {
+  const backup = {
+    version: '1.0',
+    fecha: new Date().toISOString(),
+    sistema: {}
+  };
+
+  // Guardar todo el localStorage relevante
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    // Incluir todo excepto claves del sistema de Chrome
+    if (k && (k.startsWith('sys_') || k.startsWith('dal_') || k.startsWith('sifa_') ||
+        k.match(/(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos|inv_consec_)$/))) {
+      try { backup.sistema[k] = JSON.parse(localStorage.getItem(k)); }
+      catch(e) { backup.sistema[k] = localStorage.getItem(k); }
+    }
+  }
+
+  // Incluir todas las empresas y sus prefijos
+  const todas = getTodasEmpresas();
+  Object.values(todas).forEach(emp => {
+    const p = emp.dbPrefix;
+    ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos'].forEach(t => {
+      const val = localStorage.getItem(p + t);
+      if (val) {
+        try { backup.sistema[p + t] = JSON.parse(val); }
+        catch(e) { backup.sistema[p + t] = val; }
+      }
+    });
+  });
+
+  const json     = JSON.stringify(backup, null, 2);
+  const blob     = new Blob([json], { type: 'application/json' });
+  const url      = URL.createObjectURL(blob);
+  const fecha    = new Date().toISOString().slice(0, 10);
+  const a        = document.createElement('a');
+  a.href         = url;
+  a.download     = `SiFa_backup_${fecha}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  // Registrar fecha del último backup
+  localStorage.setItem('sifa_ultimo_backup', new Date().toISOString());
+  toast('✅ Backup descargado — guárdalo en un lugar seguro');
+}
+
+function importarBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup.sistema) { toast('Archivo de backup no válido', 'error'); return; }
+
+      const total = Object.keys(backup.sistema).length;
+      if (!confirm(`¿Restaurar backup del ${backup.fecha ? new Date(backup.fecha).toLocaleDateString('es') : 'fecha desconocida'}?\n\nSe restaurarán ${total} colecciones de datos.\n\nLos datos existentes NO se borrarán — solo se añadirán los que falten.`)) return;
+
+      let restaurados = 0;
+      Object.entries(backup.sistema).forEach(([k, v]) => {
+        // No machacar datos que ya existen si son arrays con contenido
+        const actual = localStorage.getItem(k);
+        if (actual) {
+          try {
+            const arrActual = JSON.parse(actual);
+            const arrBackup = Array.isArray(v) ? v : null;
+            if (Array.isArray(arrActual) && arrActual.length > 0 && arrBackup) {
+              // Fusionar: añadir items del backup que no existan (por id)
+              const ids = new Set(arrActual.map(x => x.id));
+              const nuevos = arrBackup.filter(x => x.id && !ids.has(x.id));
+              if (nuevos.length > 0) {
+                localStorage.setItem(k, JSON.stringify([...arrActual, ...nuevos]));
+                restaurados += nuevos.length;
+              }
+              return;
+            }
+          } catch(e) {}
+        }
+        // Clave no existe o no es array — restaurar directamente
+        localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+        restaurados++;
+      });
+
+      // Recargar datos de empresa activa
+      if (empresaActual) {
+        cargarDatosEmpresa(empresaActual);
+        updateBadges();
+        renderDashboard();
+      }
+
+      input.value = '';
+      toast(`✅ Restauración completa — ${restaurados} elementos recuperados`);
+
+    } catch(err) {
+      toast('Error al leer el archivo de backup', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ─── Recordatorio semanal de backup ───
+function checkRecordatorioBackup() {
+  const ultimo = localStorage.getItem('sifa_ultimo_backup');
+  if (!ultimo) {
+    // Nunca ha hecho backup
+    mostrarRecordatorioBackup('⚠️ Nunca has hecho un backup. ¡Hazlo ahora para proteger tus datos!');
+    return;
+  }
+  const dias = Math.floor((Date.now() - new Date(ultimo).getTime()) / (1000 * 60 * 60 * 24));
+  if (dias >= 7) {
+    mostrarRecordatorioBackup(`⚠️ Han pasado ${dias} días desde tu último backup. Te recomendamos hacer uno ahora.`);
+  }
+}
+
+function mostrarRecordatorioBackup(mensaje) {
+  // Toast especial persistente
+  const div = document.createElement('div');
+  div.id = 'backup-reminder';
+  div.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#1A1A24;border:1px solid #F59E0B;border-radius:14px;
+    padding:16px 20px;z-index:9999;display:flex;align-items:center;gap:14px;
+    box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:480px;width:90%`;
+  div.innerHTML = `
+    <span style="font-size:20px">💾</span>
+    <div style="flex:1;font-size:13px;color:#EEEEF2;line-height:1.5">${mensaje}</div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="exportarBackup();document.getElementById('backup-reminder').remove()"
+        style="background:#F59E0B;color:#000;border:none;padding:8px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">
+        Hacer backup
+      </button>
+      <button onclick="document.getElementById('backup-reminder').remove()"
+        style="background:transparent;color:#8888A0;border:1px solid #2A2A38;padding:8px 12px;border-radius:8px;font-size:12px;cursor:pointer">
+        Luego
+      </button>
+    </div>`;
+  document.body.appendChild(div);
+}
+
 initEmpresas();
 updateDate();
 setInterval(updateDate, 60000);
@@ -2553,6 +2697,8 @@ if (_savedKey && getEmpresa(_savedKey)) {
   showSection('empresas');
 }
 
+// Recordatorio de backup — aparece 3 segundos después de cargar
+setTimeout(checkRecordatorioBackup, 3000);
 </script>
 </body>
 </html>
