@@ -484,7 +484,7 @@ if ('serviceWorker' in navigator) {
 <main>
 
   <!-- ═══ PORTADA / SELECTOR DE EMPRESAS ═══ -->
-  <div class="section" id="section-empresas" style="padding:0;margin:0;max-width:100%;position:fixed;inset:0;overflow-y:auto;z-index:50;background:#0A0A0F;display:none">
+  <div class="section" id="section-empresas" style="padding:0;margin:0;max-width:100%;position:fixed;inset:0;overflow-y:auto;z-index:300;background:#0A0A0F;display:none">
 
     <!-- HERO PORTADA -->
     <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 32px;background:radial-gradient(ellipse 80% 60% at 50% -10%,#16163A 0%,#0A0A0F 70%)">
@@ -1202,39 +1202,34 @@ const _SECTION_TITLES = {
 };
 
 function showSection(id) {
-  // Portada empresas → overlay fijo
-  const secEmp = document.getElementById('section-empresas');
-  secEmp.style.display = 'none';
-
+  const secEmp     = document.getElementById('section-empresas');
   const sidebar    = document.getElementById('sidebar');
   const topbar     = document.getElementById('topbar');
-  const mainContent = document.getElementById('main-content');
 
   if (id === 'empresas') {
-    secEmp.style.display = 'flex';
+    // Mostrar portada fija — tapa todo
+    secEmp.style.display       = 'flex';
     secEmp.style.flexDirection = 'column';
-    // Ocultar sidebar y topbar en portada
-    sidebar.style.display    = 'none';
-    topbar.style.display     = 'none';
-    mainContent.style.display = 'none';
+    sidebar.style.display      = 'none';
+    topbar.style.display       = 'none';
     renderEmpresas();
     closeSidebar();
     return;
   }
 
-  // Mostrar sidebar y topbar
-  sidebar.style.display    = '';
-  topbar.style.display     = '';
-  mainContent.style.display = '';
+  // Ocultar portada, mostrar sidebar y topbar
+  secEmp.style.display  = 'none';
+  sidebar.style.display = '';
+  topbar.style.display  = '';
 
-  // Actualizar sección activa
+  // Activar sección correcta
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('section-' + id).classList.add('active');
   const tab = document.getElementById('tab-' + id);
   if (tab) tab.classList.add('active');
 
-  // Actualizar título topbar
+  // Título topbar
   const title = document.getElementById('topbar-title');
   if (title) title.innerHTML = _SECTION_TITLES[id] || id.toUpperCase();
 
