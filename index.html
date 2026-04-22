@@ -1148,6 +1148,16 @@ let concClienteId=null, excedentePendiente=null;
 
 // ═══ CARGAR DATOS AISLADOS POR EMPRESA ═══
 function cargarDatosEmpresa(emp) {
+  // Flush inmediato de la empresa anterior antes de cargar la nueva
+  // Esto garantiza que datos en memoria no persisten entre cambios
+  clientes   = [];
+  mercancias = [];
+  facturas   = [];
+  pagos      = [];
+  invoices   = [];
+  calculos   = [];
+  anticipios = [];
+
   empresaActual = emp;
   window._empresaPrefix = emp.dbPrefix;
   const p = emp.dbPrefix;
@@ -1187,20 +1197,35 @@ function seleccionarEmpresaDirecta(key) {
 function abrirSelectorEmpresas() { showSection('empresas'); }
 function rebuildEmpresaSelector() { renderEmpresas(); }
 
-// ═══ SAVE ═══
+// ═══ SAVE — con verificación de empresa activa ═══
+function _assertEmpresa() {
+  if (!empresaActual) { console.error('SiFa: save() sin empresa activa'); return false; }
+  if (window._empresaPrefix !== empresaActual.dbPrefix) {
+    console.error('SiFa: prefijo inconsistente — posible cruce de datos bloqueado');
+    return false;
+  }
+  return true;
+}
 function save() {
-  if(!empresaActual) return;
-  const p=empresaActual.dbPrefix;
-  localStorage.setItem(p+'clientes',   JSON.stringify(clientes));
-  localStorage.setItem(p+'mercancias', JSON.stringify(mercancias));
-  localStorage.setItem(p+'facturas',   JSON.stringify(facturas));
-  localStorage.setItem(p+'pagos',      JSON.stringify(pagos));
+  if (!_assertEmpresa()) return;
+  const p = empresaActual.dbPrefix;
+  localStorage.setItem(p + 'clientes',   JSON.stringify(clientes));
+  localStorage.setItem(p + 'mercancias', JSON.stringify(mercancias));
+  localStorage.setItem(p + 'facturas',   JSON.stringify(facturas));
+  localStorage.setItem(p + 'pagos',      JSON.stringify(pagos));
 }
 function saveInvoicesDB() {
-  if (empresaActual) localStorage.setItem(empresaActual.dbPrefix + 'invoices', JSON.stringify(invoices));
+  if (!_assertEmpresa()) return;
+  localStorage.setItem(empresaActual.dbPrefix + 'invoices', JSON.stringify(invoices));
 }
-function saveCalcDB()     { if(empresaActual) localStorage.setItem(empresaActual.dbPrefix+'calculos',JSON.stringify(calculos)); }
-function saveAnticipos()  { if(empresaActual) localStorage.setItem(empresaActual.dbPrefix+'anticipos',JSON.stringify(anticipios)); }
+function saveCalcDB() {
+  if (!_assertEmpresa()) return;
+  localStorage.setItem(empresaActual.dbPrefix + 'calculos', JSON.stringify(calculos));
+}
+function saveAnticipos() {
+  if (!_assertEmpresa()) return;
+  localStorage.setItem(empresaActual.dbPrefix + 'anticipos', JSON.stringify(anticipios));
+}
 
 // ═══ UTILS ═══
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -1621,14 +1646,16 @@ const DOC_TIPOS_BASE = [
 ];
 
 function getDocTipos() {
-  const custom = JSON.parse(localStorage.getItem('sifa_doc_tipos') || '[]');
+  const prefix = empresaActual ? empresaActual.dbPrefix : '';
+  const custom = JSON.parse(localStorage.getItem(prefix + 'doc_tipos') || '[]');
   return [...DOC_TIPOS_BASE, ...custom];
 }
 function saveDocTipo(label, letra) {
-  const custom = JSON.parse(localStorage.getItem('sifa_doc_tipos') || '[]');
+  const prefix = empresaActual ? empresaActual.dbPrefix : '';
+  const custom = JSON.parse(localStorage.getItem(prefix + 'doc_tipos') || '[]');
   const key = letra.toUpperCase();
   if (!custom.find(t => t.key === key)) custom.push({key, label});
-  localStorage.setItem('sifa_doc_tipos', JSON.stringify(custom));
+  localStorage.setItem(prefix + 'doc_tipos', JSON.stringify(custom));
 }
 function getTipoLabel(key) {
   const t = getDocTipos().find(t => t.key === key);
@@ -1707,7 +1734,7 @@ function populateInvoiceModal() {
   // Tipos custom en el select
   const sel = document.getElementById('inv_tipo');
   [...sel.options].forEach(o => { if (!['I','F','O','C','__nuevo__'].includes(o.value)) o.remove(); });
-  const custom = JSON.parse(localStorage.getItem('sifa_doc_tipos') || '[]');
+  const custom = JSON.parse(localStorage.getItem((empresaActual ? empresaActual.dbPrefix : '') + 'doc_tipos') || '[]');
   const ref = sel.querySelector('option[value="__nuevo__"]');
   custom.forEach(t => {
     if (!sel.querySelector(`option[value="${t.key}"]`)) {
@@ -2890,167 +2917,164 @@ function mostrarRecordatorioBackup(mensaje) {
 }
 
 // ═══════════════════════════════════════════════════
-// SEED DAL MIAMI — datos extraídos de informe PDF
-// Se ejecuta una vez, actualiza sin duplicar
+// SEED DAL MIAMI v2 — datos del informe PDF 08/04/2026
+// Vincula pagos por facturaId correctamente
 // ═══════════════════════════════════════════════════
 function seedDALMiami() {
   const PREFIX = 'dalmiami_';
-  const KEY    = 'dalmiami';
+  const KEY    = 'dal';
 
-  // ── 1. Empresa ──
+  // ── 1. Empresa: actualizar sin sobrescribir logo/colores ──
   const todas = getTodasEmpresas();
   const prev  = todas[KEY] || {};
   todas[KEY]  = Object.assign({}, prev, {
-    key:            KEY,
-    nombre:         'DAL MIAMI EXPORT LLC',
-    sub:            'Export & Import',
-    ein:            'EIN: 93-1412443',
-    dbPrefix:       PREFIX,
-    direccion:      '3901 SW 78th CT Miami FL-33155',
-    email:          'dalmiami9@gmail.com',
-    tel:            '+1 786-839-1403',
-    gerente:        'Diego Hernández',
-    cargoGerente:   'Gerente Financiero',
-    presidente:     'Diego Hernández',
+    key: KEY, nombre: 'DAL MIAMI EXPORT LLC',
+    sub: 'Export LLC — Libro de Asiento',
+    ein: 'EIN: 93-1412443', dbPrefix: PREFIX,
+    direccion: '3901 SW 78th CT Miami FL-33155',
+    email: 'dalmiami9@gmail.com', tel: '+1 786-839-1403',
+    gerente: 'Diego Hernández', cargoGerente: 'Gerente Financiero',
+    presidente: 'Alejandro De Lara',
     colorPrimary:   prev.colorPrimary   || '#E8202A',
     colorSecondary: prev.colorSecondary || '#1A3CCC',
     colorAccent:    prev.colorAccent    || '#22C55E',
-    logo:           prev.logo           || null,
-    firmaSVG:       prev.firmaSVG       || null,
-    cunoSVG:        prev.cunoSVG        || null,
+    logo: prev.logo || null,
   });
   saveTodasEmpresas(todas);
 
-  // ── 2. Clientes (upsert por nombre) ──
-  const clientesRaw = JSON.parse(localStorage.getItem(PREFIX + 'clientes') || '[]');
-  const upsertCliente = (nombre, pais, extra) => {
-    const idx = clientesRaw.findIndex(c => c.nombre.toLowerCase() === nombre.toLowerCase());
-    const obj = Object.assign({ id: uid(), nombre, pais: pais || 'Cuba' }, extra || {});
-    if (idx >= 0) Object.assign(clientesRaw[idx], obj);
-    else clientesRaw.push(obj);
+  // ── 2. Clientes ──
+  let cls = JSON.parse(localStorage.getItem(PREFIX+'clientes')||'[]');
+  const upsertC = (nombre, extra={}) => {
+    let c = cls.find(x => x.nombre.toLowerCase()===nombre.toLowerCase());
+    if (!c) { c = {id:uid(), nombre, pais:'Cuba', ...extra}; cls.push(c); }
+    else Object.assign(c, extra);
+    return c.id;
   };
-  upsertCliente('La Catedral SURL',   'Cuba', { cif: '50004348171' });
-  upsertCliente('CEDA SURL',          'Cuba', {});
-  upsertCliente('MERCY SURL',         'Cuba', {});
-  upsertCliente('Santa Barbara SURL', 'Cuba', {});
-  localStorage.setItem(PREFIX + 'clientes', JSON.stringify(clientesRaw));
+  const cLaCatedral  = upsertC('La Catedral SURL',   {cif:'50004348171'});
+  const cCEDA        = upsertC('CEDA SURL',           {});
+  const cMERCY       = upsertC('MERCY SURL',          {});
+  const cSantaBarbara= upsertC('Santa Barbara SURL',  {});
+  localStorage.setItem(PREFIX+'clientes', JSON.stringify(cls));
 
-  // ── 3. Mercancías (upsert por nombre) ──
-  const mercsRaw = JSON.parse(localStorage.getItem(PREFIX + 'mercancias') || '[]');
-  const upsertMerc = (nombre, unidad, extra) => {
-    const idx = mercsRaw.findIndex(m => m.nombre.toLowerCase() === nombre.toLowerCase());
-    const obj = Object.assign({ id: uid(), nombre, unidad, categoria: 'Alimentos' }, extra || {});
-    if (idx >= 0) Object.assign(mercsRaw[idx], obj);
-    else mercsRaw.push(obj);
+  // ── 3. Mercancías ──
+  let mercs = JSON.parse(localStorage.getItem(PREFIX+'mercancias')||'[]');
+  const upsertM = (nombre, unidad, descripcion) => {
+    let m = mercs.find(x => x.nombre.toLowerCase()===nombre.toLowerCase());
+    if (!m) { m = {id:uid(), nombre, unidad, categoria:'Pollo', descripcion}; mercs.push(m); }
+    return m.id;
   };
-  upsertMerc('Frozen 4x10 Lb PolyBagged',       'Caja',  { descripcion: 'Pollo congelado 4x10 Lb en bolsa' });
-  upsertMerc('Frozen Pork Boneless Loin',         'KG',    { descripcion: 'Lomo de cerdo deshuesado congelado' });
-  upsertMerc('Sanderson Farms Frozen Half Bird',  'Caja',  { descripcion: 'Pollo entero Sanderson Farms congelado, medio' });
-  localStorage.setItem(PREFIX + 'mercancias', JSON.stringify(mercsRaw));
+  const mPollo    = upsertM('Frozen 4x10 Lb Poly-Bagged',      'Caja', 'Pollo congelado 4x10 Lb en bolsa');
+  const mCerdo    = upsertM('Frozen Pork Boneless Loin',        'KG',   'Lomo de cerdo deshuesado congelado');
+  const mSanderson= upsertM('Sanderson Farms Frozen Half Bird', 'Caja', 'Medio pollo Sanderson Farms congelado');
+  localStorage.setItem(PREFIX+'mercancias', JSON.stringify(mercs));
 
-  // Refrescar listas para tener IDs disponibles
-  const clientes2  = JSON.parse(localStorage.getItem(PREFIX + 'clientes')   || '[]');
-  const mercs2     = JSON.parse(localStorage.getItem(PREFIX + 'mercancias') || '[]');
-  const cId = n  => (clientes2.find(c => c.nombre.toLowerCase().includes(n.toLowerCase())) || {}).id || '';
-  const mId = n  => (mercs2.find(m => m.nombre.toLowerCase().includes(n.toLowerCase()))   || {}).id || '';
-
-  // ── 4. Facturas (upsert por número) ──
-  const factsRaw = JSON.parse(localStorage.getItem(PREFIX + 'facturas') || '[]');
-  const upsertFact = (f) => {
-    const idx = factsRaw.findIndex(x => x.numero === f.numero);
-    if (idx >= 0) Object.assign(factsRaw[idx], f);
-    else factsRaw.push(Object.assign({ id: uid() }, f));
-  };
-
-  const facturas = [
-    // fecha, numero, cliente, mercancía, deuda, cobrado
-    ['2026-01-12','2601','La Catedral', 'Frozen 4x10', 18627.90, 19467.30],
-    ['2026-01-12','2602','CEDA',        'Frozen 4x10', 18627.90, 18627.90],
-    ['2026-01-12','2603','MERCY',       'Frozen 4x10', 18627.90, 20000.00],
-    ['2026-01-12','2604','Santa',       'Frozen 4x10', 18627.90, 18627.90],
-    ['2026-02-15','2605','La Catedral', 'Pork',        33176.00, 28275.16],
-    ['2026-02-15','2606','CEDA',        'Pork',        33168.00, 20000.00],
-    ['2026-02-15','2607','MERCY',       'Pork',        33172.00, 24974.50],
-    ['2026-04-08','2608','La Catedral', 'Sanderson',   12372.75,     0.00],
-    ['2026-04-08','2609','CEDA',        'Sanderson',   12372.75,     0.00],
-    ['2026-04-08','2610','MERCY',       'Sanderson',   12351.60,     0.00],
+  // ── 4. Facturas + Pagos (upsert por número, vinculados correctamente) ──
+  // Formato: [fecha, numero, clienteId, mercanciaId, deuda, cobrado]
+  // El "cobrado" del PDF es el total recibido — si supera la deuda es saldo a favor
+  const ops = [
+    ['2026-01-12','2601', cLaCatedral,   mPollo,     18627.90, 19467.30],
+    ['2026-01-12','2602', cCEDA,         mPollo,     18627.90, 18627.90],
+    ['2026-01-12','2603', cMERCY,        mPollo,     18627.90, 20000.00],
+    ['2026-01-12','2604', cSantaBarbara, mPollo,     18627.90, 18627.90],
+    ['2026-02-15','2605', cLaCatedral,   mCerdo,     33176.00, 28275.16],
+    ['2026-02-15','2606', cCEDA,         mCerdo,     33168.00, 20000.00],
+    ['2026-02-15','2607', cMERCY,        mCerdo,     33172.00, 24974.50],
+    ['2026-04-08','2608', cLaCatedral,   mSanderson, 12372.75,     0.00],
+    ['2026-04-08','2609', cCEDA,         mSanderson, 12372.75,     0.00],
+    ['2026-04-08','2610', cMERCY,        mSanderson, 12351.60,     0.00],
   ];
 
-  facturas.forEach(([fecha, numero, cli, merc, deuda, cobrado]) => {
-    const saldo = Math.max(0, deuda - cobrado);
-    let estatus = 'Pendiente';
-    if (saldo <= 0)          estatus = 'Pagado';
-    else if (cobrado > 0)    estatus = 'Pagado parcialmente';
-    upsertFact({
-      fecha, numero,
-      clienteId:   cId(cli),
-      mercanciaId: mId(merc),
-      deuda,
-      arrastre:    Math.max(0, cobrado - deuda), // saldo a favor si pagó de más
-      estatus,
-    });
+  let facts = JSON.parse(localStorage.getItem(PREFIX+'facturas')||'[]');
+  let pagos = JSON.parse(localStorage.getItem(PREFIX+'pagos')||'[]');
+
+  ops.forEach(([fecha, numero, clienteId, mercanciaId, deuda, cobrado]) => {
+    // Upsert factura
+    let f = facts.find(x => x.numero === numero);
+    if (!f) {
+      f = {id: uid(), fecha, numero, clienteId, mercanciaId, deuda, arrastre: 0};
+      facts.push(f);
+    } else {
+      // Actualizar datos sin cambiar el id
+      Object.assign(f, {fecha, clienteId, mercanciaId, deuda, arrastre: 0});
+    }
+
+    // Si hay cobro, upsert pago vinculado por facturaId
+    if (cobrado > 0) {
+      // El monto que aplica a esta factura es mín(cobrado, deuda)
+      const montoFactura = Math.min(cobrado, deuda);
+      // El excedente (cobrado > deuda) va como anticipo/saldo a favor
+      const excedente = Math.max(0, cobrado - deuda);
+
+      // Upsert pago principal
+      let p = pagos.find(x => x.facturaId === f.id && x.notas && x.notas.includes('PDF'));
+      if (!p) {
+        p = {id: uid(), fecha, facturaId: f.id, monto: montoFactura, notas: 'Importado desde informe PDF'};
+        pagos.push(p);
+      } else {
+        Object.assign(p, {fecha, monto: montoFactura});
+      }
+
+      // Si hubo excedente, guardar como anticipo vinculado al cliente
+      if (excedente > 0.01) {
+        let ants = JSON.parse(localStorage.getItem(PREFIX+'anticipos')||'[]');
+        const yaExiste = ants.find(a => a.origen && a.origen.includes(numero));
+        if (!yaExiste) {
+          ants.push({id: uid(), fecha, clienteId, monto: excedente,
+            origen: `Excedente factura ${numero}`, aplicado: false});
+          localStorage.setItem(PREFIX+'anticipos', JSON.stringify(ants));
+        }
+      }
+    }
   });
-  localStorage.setItem(PREFIX + 'facturas', JSON.stringify(factsRaw));
 
-  // ── 5. Pagos (upsert por factura+fecha) ──
-  const pagosRaw = JSON.parse(localStorage.getItem(PREFIX + 'pagos') || '[]');
-  const upsertPago = (p) => {
-    const idx = pagosRaw.findIndex(x => x.numero === p.numero && x.clienteId === p.clienteId);
-    if (idx >= 0) Object.assign(pagosRaw[idx], p);
-    else pagosRaw.push(Object.assign({ id: uid() }, p));
-  };
-
-  const pagos = [
-    ['2026-01-12','2601','La Catedral', 19467.30],
-    ['2026-01-12','2602','CEDA',        18627.90],
-    ['2026-01-12','2603','MERCY',       20000.00],
-    ['2026-01-12','2604','Santa',       18627.90],
-    ['2026-02-15','2605','La Catedral', 28275.16],
-    ['2026-02-15','2606','CEDA',        20000.00],
-    ['2026-02-15','2607','MERCY',       24974.50],
-  ];
-  pagos.forEach(([fecha, numero, cli, monto]) => {
-    if (monto > 0) upsertPago({ fecha, numero, clienteId: cId(cli), monto, notas: 'Importado desde informe PDF' });
-  });
-  localStorage.setItem(PREFIX + 'pagos', JSON.stringify(pagosRaw));
-
-  console.log('✅ Seed DAL Miami completado');
+  localStorage.setItem(PREFIX+'facturas', JSON.stringify(facts));
+  localStorage.setItem(PREFIX+'pagos',    JSON.stringify(pagos));
+  console.log('✅ Seed DAL Miami v2 completado — 4 clientes, 3 productos, 10 facturas, 7 cobros');
 }
 
-// Ejecutar seed una sola vez — controlado por flag en localStorage
-if (!localStorage.getItem('sifa_seed_dalmiami_v1')) {
-  // Esperar a que initEmpresas() haya corrido
+// Seed corre solo una vez — flag v2 controla esto
+if (!localStorage.getItem('sifa_seed_dalmiami_v2')) {
   setTimeout(() => {
     seedDALMiami();
-    localStorage.setItem('sifa_seed_dalmiami_v1', '1');
-    console.log('✅ DAL Miami: empresa, clientes, productos y facturas cargados');
-  }, 200);
+    localStorage.setItem('sifa_seed_dalmiami_v2', '1');
+  }, 300);
 }
+
 
 
 updateDate();
 setInterval(updateDate, 60000);
 
-// Limpiar clave global de invoices si quedó de versión anterior
-// (los datos ya están guardados por prefijo de empresa)
-if (localStorage.getItem('sifa_invoices_global')) {
-  localStorage.removeItem('sifa_invoices_global');
-}
+// ── Limpiar empresa duplicada key 'dalmiami' del seed v1 defectuoso ──
+(function() {
+  const todas = getTodasEmpresas();
+  let dirty = false;
+  // Borrar key 'dalmiami' si existe (duplicado del 'dal' correcto)
+  if (todas['dalmiami']) { delete todas['dalmiami']; dirty = true; }
+  // Asegurar que 'dal' existe con el prefijo correcto
+  if (todas['dal'] && todas['dal'].dbPrefix !== 'dalmiami_') {
+    todas['dal'].dbPrefix = 'dalmiami_'; dirty = true;
+  }
+  if (dirty) saveTodasEmpresas(todas);
+})();
 
+// Siempre arranca en empresas — mostrando la portada
+initEmpresas();
+updateBadges();
+showSection('empresas');
+
+// Si había empresa activa, cargar sus datos en segundo plano
 const _savedKey = localStorage.getItem('dal_empresa_actual');
 if (_savedKey && getEmpresa(_savedKey)) {
-  // Había empresa activa — cargar datos y mostrar dashboard
   cargarDatosEmpresa(getEmpresa(_savedKey));
   applyEmpresaTheme(getEmpresa(_savedKey));
   updateBadges();
-  showSection('dashboard');
-} else {
-  // Primera vez o sin empresa — mostrar portada
-  showSection('empresas');
+  renderEmpresas(); // re-render con la activa marcada
 }
 
-// Recordatorio de backup — aparece 3 segundos después de cargar
+// Recordatorio de backup
 setTimeout(checkRecordatorioBackup, 3000);
+
 </script>
 </body>
 </html>
