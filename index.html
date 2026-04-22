@@ -910,6 +910,12 @@ if ('serviceWorker' in navigator) {
       <div class="form-group"><label>Observaciones / Notas</label><textarea id="inv_notas" rows="2" placeholder="Cualquier nota adicional que aparecerá al pie del documento..." style="resize:vertical"></textarea></div>
     </div>
 
+    <!-- Entregado por -->
+    <div class="form-group" style="margin-top:4px">
+      <label>Entregado por <span style="color:var(--text2);font-weight:400">(nombre de quien entrega la mercancía)</span></label>
+      <input type="text" id="inv_entregado_por" placeholder="Ej: Carlos Pérez — Jefe de Almacén">
+    </div>
+
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('modalInvoice')">Cancelar</button>
       <button class="btn btn-blue" onclick="guardarInvoice()">💾 Guardar</button>
@@ -917,6 +923,7 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 </div>
+
 
 <!-- MODAL CALCULADORA -->
 <div class="modal-overlay" id="modalCalc">
@@ -996,95 +1003,101 @@ if ('serviceWorker' in navigator) {
     <div class="modal-title" id="modalEmpresaTitle">NUEVA <span>EMPRESA</span></div>
     <input type="hidden" id="emp_id">
 
-    <!-- PASO 1: Logo (lo primero) -->
+    <!-- ① LOGOTIPO -->
     <div style="background:var(--surface2);border-radius:14px;padding:20px;margin-bottom:20px">
-      <div class="section-label" style="margin-bottom:14px">① Logotipo — sube el logo y el sistema crea el tema de colores</div>
-      <div style="display:flex;gap:16px;align-items:center">
-        <!-- Preview grande -->
-        <div id="emp_logo_preview" style="width:120px;height:80px;background:var(--surface3);border:2px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;overflow:hidden;transition:all .3s">🏢</div>
-        <!-- Paleta extraída -->
-        <div id="emp_palette_preview" style="display:flex;flex-direction:column;gap:8px;flex:1">
-          <div style="font-size:11px;color:var(--text2)">Paleta detectada automáticamente:</div>
+      <div class="section-label" style="margin-bottom:14px">① Logotipo</div>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <div id="emp_logo_preview" style="width:120px;height:80px;background:var(--surface3);border:2px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;overflow:hidden">🏢</div>
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">Sube el logo de la empresa. Los colores del tema se detectan automáticamente.</div>
           <div style="display:flex;gap:8px;align-items:center">
-            <div id="swatch1" style="width:32px;height:32px;border-radius:8px;background:#6366F1;border:2px solid var(--border);transition:all .4s"></div>
-            <div id="swatch2" style="width:32px;height:32px;border-radius:8px;background:#0EA5E9;border:2px solid var(--border);transition:all .4s"></div>
-            <div id="swatch3" style="width:32px;height:32px;border-radius:8px;background:#22C55E;border:2px solid var(--border);transition:all .4s"></div>
-            <span id="emp_palette_label" style="font-size:11px;color:var(--text2);margin-left:4px">Sube un logo para detectar colores</span>
+            <div id="swatch1" style="width:20px;height:20px;border-radius:50%;background:#6366F1;border:2px solid var(--border)"></div>
+            <div id="swatch2" style="width:20px;height:20px;border-radius:50%;background:#0EA5E9;border:2px solid var(--border)"></div>
+            <div id="swatch3" style="width:20px;height:20px;border-radius:50%;background:#22C55E;border:2px solid var(--border)"></div>
+            <span id="emp_palette_label" style="font-size:11px;color:var(--text2)">Paleta automática</span>
           </div>
         </div>
-        <!-- Botones -->
         <div style="display:flex;flex-direction:column;gap:6px">
           <input type="file" id="emp_logo_file" accept="image/*" onchange="previewLogo()" style="display:none">
+          <input type="color" id="emp_color1" value="#6366F1" style="display:none">
+          <input type="color" id="emp_color2" value="#0EA5E9" style="display:none">
+          <input type="color" id="emp_color3" value="#22C55E" style="display:none">
           <button class="btn btn-primary btn-sm" onclick="document.getElementById('emp_logo_file').click()">📁 Subir logo</button>
           <button class="btn btn-danger btn-sm" onclick="clearLogo()">✕ Quitar</button>
         </div>
       </div>
-      <!-- Ajuste manual de colores (colapsado, visible tras upload) -->
-      <div id="emp_color_manual" style="margin-top:14px;display:none">
-        <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Ajustar colores manualmente si lo deseas:</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
-            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px">Primario</div>
-            <input type="color" id="emp_color1" value="#6366F1" style="width:44px;height:36px;padding:2px;cursor:pointer;border-radius:8px;border:1px solid var(--border);background:var(--surface3)" oninput="onColorManualChange()">
-            <input type="text" id="emp_color1_hex" value="#6366F1" style="width:80px;text-align:center;font-size:11px;padding:4px" oninput="syncColor('emp_color1','emp_color1_hex');onColorManualChange()">
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
-            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px">Secundario</div>
-            <input type="color" id="emp_color2" value="#0EA5E9" style="width:44px;height:36px;padding:2px;cursor:pointer;border-radius:8px;border:1px solid var(--border);background:var(--surface3)" oninput="onColorManualChange()">
-            <input type="text" id="emp_color2_hex" value="#0EA5E9" style="width:80px;text-align:center;font-size:11px;padding:4px" oninput="syncColor('emp_color2','emp_color2_hex');onColorManualChange()">
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
-            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px">Acento</div>
-            <input type="color" id="emp_color3" value="#22C55E" style="width:44px;height:36px;padding:2px;cursor:pointer;border-radius:8px;border:1px solid var(--border);background:var(--surface3)" oninput="onColorManualChange()">
-            <input type="text" id="emp_color3_hex" value="#22C55E" style="width:80px;text-align:center;font-size:11px;padding:4px" oninput="syncColor('emp_color3','emp_color3_hex');onColorManualChange()">
-          </div>
-          <!-- Mini preview del tema -->
-          <div id="emp_theme_preview" style="flex:1;min-width:140px;background:var(--surface3);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px">
-            <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Vista previa:</div>
-            <div id="prev_btn" style="background:#6366F1;color:white;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;text-align:center">Botón primario</div>
-            <div style="display:flex;gap:4px">
-              <div id="prev_badge" style="background:#6366F1;color:white;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700">Badge</div>
-              <div id="prev_accent" style="background:#22C55E22;color:#22C55E;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700">Acento</div>
-            </div>
-            <div id="prev_border" style="border-left:3px solid #0EA5E9;padding-left:6px;font-size:10px;color:var(--text2)">Secundario</div>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- PASO 2: Datos de la empresa -->
+    <!-- ② DATOS DE LA EMPRESA -->
     <div class="section-label" style="margin-bottom:14px">② Datos de la empresa</div>
     <div class="form-row">
-      <div class="form-group"><label>Nombre completo *</label><input type="text" id="emp_nombre" placeholder="Ej: Acme Corp S.L."></div>
-      <div class="form-group"><label>Subtítulo / Actividad</label><input type="text" id="emp_sub" placeholder="Ej: Importación y distribución"></div>
+      <div class="form-group"><label>Nombre completo *</label><input type="text" id="emp_nombre" placeholder="Ej: DAL Miami Export LLC"></div>
+      <div class="form-group"><label>Subtítulo / Actividad</label><input type="text" id="emp_sub" placeholder="Ej: Export & Import"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>NIF / EIN / CIF / RUT</label><input type="text" id="emp_ein" placeholder="Ej: B12345678"></div>
-      <div class="form-group"><label>Prefijo BD *</label><input type="text" id="emp_prefix" placeholder="Ej: acme_" oninput="this.value=this.value.replace(/[^a-z0-9_]/gi,'').toLowerCase()"><div style="font-size:10px;color:var(--text2);margin-top:4px">Identificador único, no cambia después</div></div>
+      <div class="form-group"><label>NIF / EIN / CIF / RUT</label><input type="text" id="emp_ein" placeholder="Ej: 93-1412443"></div>
+      <div class="form-group"><label>Prefijo BD *</label><input type="text" id="emp_prefix" placeholder="Ej: dalmiami_" oninput="this.value=this.value.replace(/[^a-z0-9_]/gi,'').toLowerCase()"><div style="font-size:10px;color:var(--text2);margin-top:4px">Identificador único, no cambia después</div></div>
     </div>
-    <div class="form-group"><label>Dirección fiscal</label><input type="text" id="emp_direccion" placeholder="Ej: Calle Mayor 1, 28001 Madrid"></div>
+    <div class="form-group"><label>Dirección fiscal</label><input type="text" id="emp_direccion" placeholder="Ej: 3901 SW 78th CT Miami FL-33155"></div>
     <div class="form-row">
       <div class="form-group"><label>Email</label><input type="email" id="emp_email" placeholder="contacto@empresa.com"></div>
-      <div class="form-group"><label>Teléfono</label><input type="text" id="emp_tel" placeholder="+34 600 000 000"></div>
+      <div class="form-group"><label>Teléfono</label><input type="text" id="emp_tel" placeholder="+1 786 000 0000"></div>
     </div>
 
-    <!-- PASO 3: Datos bancarios -->
-    <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:18px">
+    <!-- ③ DATOS BANCARIOS -->
+    <div style="background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:20px">
       <div class="section-label" style="margin-bottom:12px">③ Datos bancarios (aparecen en documentos)</div>
       <div class="form-row">
-        <div class="form-group"><label>Banco</label><input type="text" id="emp_banco" placeholder="Ej: Banco Santander"></div>
-        <div class="form-group"><label>SWIFT / BIC / ABA</label><input type="text" id="emp_swift" placeholder="Ej: BSCHESMMXXX"></div>
+        <div class="form-group"><label>Banco</label><input type="text" id="emp_banco" placeholder="Ej: JPMorgan Chase Bank"></div>
+        <div class="form-group"><label>SWIFT / BIC / ABA</label><input type="text" id="emp_swift" placeholder="Ej: 267084131"></div>
       </div>
       <div class="form-group"><label>N° Cuenta / IBAN</label><input type="text" id="emp_cuenta" placeholder="Ej: ES91 2100 0418 4502 0005 1332"></div>
     </div>
 
-    <!-- PASO 4: Firmante -->
-    <div class="section-label" style="margin-bottom:14px">④ Firmante (aparece en documentos)</div>
-    <div class="form-row">
-      <div class="form-group"><label>Nombre firmante</label><input type="text" id="emp_gerente" placeholder="Ej: Ana García"></div>
-      <div class="form-group"><label>Cargo</label><input type="text" id="emp_cargo" placeholder="Ej: Directora General"></div>
+    <!-- ④ CEO & FIRMA + CUÑO -->
+    <div style="background:var(--surface2);border-radius:14px;padding:20px;margin-bottom:20px">
+      <div class="section-label" style="margin-bottom:16px">④ CEO — Firma &amp; Cuño (aparecen en todos los documentos)</div>
+
+      <div class="form-row" style="margin-bottom:16px">
+        <div class="form-group">
+          <label>Nombre del CEO *</label>
+          <input type="text" id="emp_gerente" placeholder="Ej: Diego Hernández" oninput="onCEONameChange()">
+        </div>
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="emp_cargo" placeholder="Ej: Chief Executive Officer">
+        </div>
+      </div>
+      <!-- Oculto por compatibilidad -->
+      <input type="hidden" id="emp_presidente">
+
+      <!-- Previews firma + cuño -->
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+
+        <!-- Firma SVG -->
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Firma generada</div>
+          <div id="firma_preview" style="background:white;border-radius:10px;padding:16px 20px;min-height:80px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">
+            <span style="color:#bbb;font-size:12px">— escribe el nombre del CEO —</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%" onclick="generarFirmaSVG()">↺ Regenerar firma</button>
+        </div>
+
+        <!-- Cuño/Sello -->
+        <div style="flex:1;min-width:160px">
+          <div style="font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Cuño de empresa</div>
+          <div id="cuno_preview" style="background:white;border-radius:10px;padding:12px;min-height:80px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">
+            <span style="color:#bbb;font-size:12px">— sube el logo —</span>
+          </div>
+          <div style="font-size:10px;color:var(--text2);margin-top:6px;text-align:center">Se genera automáticamente del logo</div>
+        </div>
+
+      </div>
+
+      <!-- SVG almacenado (hidden) -->
+      <input type="hidden" id="emp_firma_svg">
+      <input type="hidden" id="emp_cuno_svg">
     </div>
-    <div class="form-group"><label>Presidente / CEO</label><input type="text" id="emp_presidente" placeholder="Ej: Carlos López"></div>
 
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('modalEmpresa')">Cancelar</button>
@@ -1722,7 +1735,7 @@ function populateInvoiceModal() {
 
   // Campos opcionales en blanco
   ['inv_flete','inv_seguro','inv_proveedor','inv_peso','inv_bultos',
-   'inv_origen','inv_puerto','inv_notas'].forEach(id => {
+   'inv_origen','inv_puerto','inv_notas','inv_entregado_por'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('inv_incoterm').value = '';
@@ -1827,6 +1840,7 @@ function getInvoiceData() {
     peso:          document.getElementById('inv_peso').value.trim(),
     bultos:        document.getElementById('inv_bultos').value.trim(),
     notas:         document.getElementById('inv_notas').value.trim(),
+    entregadoPor:  document.getElementById('inv_entregado_por').value.trim(),
     cliente
   };
 }
@@ -1942,16 +1956,61 @@ ${partesHTML}
 ${logBlock}
 ${notasBlock}
 
-<!-- FIRMA -->
-<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:18px;border-top:1px solid #e0e0e0;padding-top:12px">
-  <div>
-    <div style="width:150px;border-bottom:1px solid #aaa;margin-bottom:4px;height:22px"></div>
-    <div style="font-weight:700;font-size:11px">${emp.gerente||''}</div>
-    <div style="font-size:9px;color:#888;text-transform:uppercase">${emp.cargoGerente||''}</div>
+<!-- PIE DE FIRMA TRIPLE -->
+<div style="display:flex;margin-top:28px;border-top:2px solid ${pc}">
+
+  <!-- ENTREGA -->
+  <div style="flex:1;padding:14px 12px;border-right:1px solid #ddd">
+    <div style="font-size:8px;font-weight:900;letter-spacing:3px;color:${pc};text-transform:uppercase;margin-bottom:16px">Entrega</div>
+    <div style="height:36px"></div>
+    <div style="border-top:1px solid #aaa;margin-bottom:4px"></div>
+    <div style="font-size:10px;font-weight:700">${data.entregadoPor || '___________________________'}</div>
+    <div style="font-size:9px;color:#999;margin-top:2px">Nombre y firma</div>
   </div>
-  <div style="text-align:right;font-size:9px;color:#aaa;line-height:1.8">
-    ${emp.banco?emp.banco+'<br>':''}${emp.swift?'SWIFT: '+emp.swift+'<br>':''}${emp.cuenta||''}
+
+  <!-- RECIBE -->
+  <div style="flex:1;padding:14px 12px;border-right:1px solid #ddd">
+    <div style="font-size:8px;font-weight:900;letter-spacing:3px;color:${pc};text-transform:uppercase;margin-bottom:16px">Recibe</div>
+    <div style="height:36px"></div>
+    <div style="border-top:1px solid #aaa;margin-bottom:4px"></div>
+    <div style="font-size:10px;font-weight:700">___________________________</div>
+    <div style="font-size:9px;color:#999;margin-top:2px">Nombre y firma</div>
   </div>
+
+  <!-- AUTORIZA -->
+  <div style="flex:1.3;padding:14px 12px;text-align:center;position:relative">
+    <div style="font-size:8px;font-weight:900;letter-spacing:3px;color:${pc};text-transform:uppercase;margin-bottom:4px">Autoriza</div>
+
+    <!-- Cuño fondo (marca de agua) -->
+    ${emp.cunoSVG ? `<div style="position:absolute;top:8px;right:8px;opacity:0.12;pointer-events:none">${emp.cunoSVG.replace(/width="152"/, 'width="86"').replace(/height="152"/, 'height="86"')}</div>` : ''}
+
+    <!-- Firma SVG -->
+    <div style="display:flex;align-items:center;justify-content:center;height:52px;margin-bottom:2px">
+      ${emp.firmaSVG
+        ? emp.firmaSVG.replace(/width="\d+"/, 'width="200"').replace(/height="\d+"/, 'height="52"')
+        : `<div style="width:180px;height:1px;background:#aaa;margin-top:36px"></div>`}
+    </div>
+
+    <div style="border-top:1px solid #aaa;width:85%;margin:0 auto 6px"></div>
+
+    <!-- Cuño + nombre CEO -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+      ${emp.cunoSVG
+        ? `<div style="opacity:0.8;flex-shrink:0">${emp.cunoSVG.replace(/width="152"/, 'width="48"').replace(/height="152"/, 'height="48"')}</div>`
+        : ''}
+      <div style="text-align:left">
+        <div style="font-size:11px;font-weight:700;color:#1a1a1a">${emp.gerente || ''}</div>
+        <div style="font-size:9px;color:#888">${emp.cargoGerente || 'CEO'}</div>
+        ${emp.ein ? `<div style="font-size:8px;color:#aaa">${emp.ein}</div>` : ''}
+      </div>
+    </div>
+
+    <!-- Datos bancarios -->
+    ${(emp.banco || emp.swift || emp.cuenta) ? `<div style="font-size:8px;color:#bbb;margin-top:8px;line-height:1.7;text-align:center;border-top:1px dashed #eee;padding-top:6px">
+      ${emp.banco ? emp.banco + ' &nbsp;|&nbsp; ' : ''}${emp.swift ? 'SWIFT: ' + emp.swift : ''}<br>${emp.cuenta || ''}
+    </div>` : ''}
+  </div>
+
 </div>
 
 </body></html>`;
@@ -2154,116 +2213,254 @@ function extractColorsFromImage(imgEl, callback) {
 
 // ── Aplicar colores extraídos al formulario ──
 function applyExtractedColors(colors) {
-  const [c1,c2,c3] = colors;
-  ['emp_color1','emp_color2','emp_color3'].forEach((id,i) => {
-    document.getElementById(id).value = colors[i];
-    document.getElementById(id+'_hex').value = colors[i];
-  });
+  const [c1, c2, c3] = colors;
+  document.getElementById('emp_color1').value = c1;
+  document.getElementById('emp_color2').value = c2;
+  document.getElementById('emp_color3').value = c3;
   document.getElementById('swatch1').style.background = c1;
   document.getElementById('swatch2').style.background = c2;
   document.getElementById('swatch3').style.background = c3;
-  document.getElementById('emp_palette_label').textContent = '✓ 3 colores extraídos del logo';
-  document.getElementById('emp_color_manual').style.display = 'block';
-  updateThemePreview(c1, c2, c3);
+  document.getElementById('emp_palette_label').textContent = '✓ Colores detectados del logo';
+  // Regenerar cuño con el logo recién subido
+  actualizarCuno();
 }
 
-function onColorManualChange() {
-  const c1=document.getElementById('emp_color1').value;
-  const c2=document.getElementById('emp_color2').value;
-  const c3=document.getElementById('emp_color3').value;
-  document.getElementById('swatch1').style.background = c1;
-  document.getElementById('swatch2').style.background = c2;
-  document.getElementById('swatch3').style.background = c3;
-  updateThemePreview(c1, c2, c3);
-}
-
-function updateThemePreview(c1,c2,c3) {
-  const btn=document.getElementById('prev_btn');
-  const badge=document.getElementById('prev_badge');
-  const acc=document.getElementById('prev_accent');
-  const bord=document.getElementById('prev_border');
-  if(btn)  { btn.style.background=c1; }
-  if(badge){ badge.style.background=c1; }
-  if(acc)  { acc.style.background=c3+'22'; acc.style.color=c3; }
-  if(bord) { bord.style.borderLeftColor=c2; }
-}
+function onColorManualChange() { /* no-op — colores solo desde logo */ }
+function updateThemePreview()   { /* no-op — sección eliminada */      }
 
 // ── Preview logo + extracción automática al subir ──
 function previewLogo() {
-  const file=document.getElementById('emp_logo_file').files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=(e)=>{
-    _logoBase64=e.target.result;
-    document.getElementById('emp_logo_preview').innerHTML=`<img src="${_logoBase64}" style="width:100%;height:100%;object-fit:contain">`;
-    document.getElementById('emp_palette_label').textContent='Analizando colores…';
-    const img=new Image();
-    img.onload=()=>{ setTimeout(()=>extractColorsFromImage(img, applyExtractedColors), 80); };
-    img.src=_logoBase64;
+  const file = document.getElementById('emp_logo_file').files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    _logoBase64 = e.target.result;
+    document.getElementById('emp_logo_preview').innerHTML =
+      `<img src="${_logoBase64}" style="width:100%;height:100%;object-fit:contain">`;
+    document.getElementById('emp_palette_label').textContent = 'Analizando colores…';
+    const img = new Image();
+    img.onload = () => {
+      setTimeout(() => extractColorsFromImage(img, applyExtractedColors), 80);
+    };
+    img.src = _logoBase64;
   };
   reader.readAsDataURL(file);
 }
 
 function clearLogo() {
-  _logoBase64=null;
-  document.getElementById('emp_logo_preview').innerHTML='🏢';
-  document.getElementById('emp_logo_file').value='';
-  document.getElementById('emp_palette_label').textContent='Sube un logo para detectar colores automáticamente';
-  ['swatch1','swatch2','swatch3'].forEach((id,i)=>{
-    document.getElementById(id).style.background=['#6366F1','#0EA5E9','#22C55E'][i];
-  });
-  document.getElementById('emp_color_manual').style.display='none';
+  _logoBase64 = null;
+  document.getElementById('emp_logo_preview').innerHTML = '🏢';
+  document.getElementById('emp_logo_file').value = '';
+  document.getElementById('emp_palette_label').textContent = 'Paleta automática';
+  document.getElementById('swatch1').style.background = '#6366F1';
+  document.getElementById('swatch2').style.background = '#0EA5E9';
+  document.getElementById('swatch3').style.background = '#22C55E';
+  document.getElementById('cuno_preview').innerHTML = '<span style="color:#bbb;font-size:12px">— sube el logo —</span>';
+  document.getElementById('emp_cuno_svg').value = '';
 }
 
-function syncColor(pid,hid) {
-  const hex=document.getElementById(hid).value;
-  if(/^#[0-9A-Fa-f]{6}$/.test(hex)) { document.getElementById(pid).value=hex; onColorManualChange(); }
+function syncColor(pid, hid) { /* no-op */ }
+
+
+
+
+
+
+// ─────────────────────────────────────────────
+// FIRMA SVG & CUÑO
+// ─────────────────────────────────────────────
+
+// Genera una firma caligráfica SVG a partir de un nombre
+function generarFirmaSVGFromName(nombre) {
+  if (!nombre) return '';
+  const w = 280, h = 90;
+  // Variación pseudo-aleatoria basada en el nombre (determinista)
+  const seed = nombre.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const r = (n, mod) => ((seed * (n+1) * 9301 + 49297) % 233280) / 233280 * mod;
+
+  // Trazos decorativos bajo la firma
+  const strokeColor = '#1a1a2e';
+  const tx = 20, ty = 58;
+
+  // Línea inferior ondulada
+  const ly = ty + 18;
+  const wave = `M${tx},${ly} Q${tx+60+r(1,20)},${ly-r(2,8)} ${tx+130},${ly} Q${tx+190+r(3,15)},${ly+r(4,8)} ${tx+260},${ly-r(5,5)}`;
+
+  // Punto/floritura final
+  const dotX = tx + 255 + r(6,10);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <text x="${tx}" y="${ty}"
+      font-family="'Palatino Linotype','Book Antiqua',Palatino,'Times New Roman',serif"
+      font-size="${28 + r(7,6)}"
+      font-style="italic"
+      font-weight="bold"
+      fill="${strokeColor}"
+      letter-spacing="${-0.5 + r(8,1.5)}"
+      transform="rotate(${-2 + r(9,3)},${w/2},${h/2})"
+    >${nombre}</text>
+    <path d="${wave}" stroke="${strokeColor}" stroke-width="1.2" fill="none" opacity="0.6"/>
+    <circle cx="${dotX}" cy="${ly}" r="${1.5+r(10,1)}" fill="${strokeColor}" opacity="0.7"/>
+  </svg>`;
 }
 
-document.addEventListener('input', e=>{
-  if(e.target.id==='emp_color1'){ document.getElementById('emp_color1_hex').value=e.target.value; onColorManualChange(); }
-  if(e.target.id==='emp_color2'){ document.getElementById('emp_color2_hex').value=e.target.value; onColorManualChange(); }
-  if(e.target.id==='emp_color3'){ document.getElementById('emp_color3_hex').value=e.target.value; onColorManualChange(); }
-});
+// Genera cuño circular con logo + nombre empresa
+function generarCunoSVG(empNombre, logoBase64, colorPrimary) {
+  const pc = colorPrimary || '#6366F1';
+  const r = 70, cx = 76, cy = 76, size = 152;
+  const nombre = empNombre ? empNombre.toUpperCase() : 'EMPRESA';
 
-// ── Abrir modal empresa (nueva o editar) ──
+  // Texto circular — calculamos las letras sobre el arco
+  const textRadius = r - 9;
+  const chars = nombre.split('');
+  const totalAngle = Math.min(chars.length * 14, 280); // max 280° para el texto
+  const startAngle = -90 - totalAngle / 2;
+  const charAngle = totalAngle / Math.max(chars.length - 1, 1);
+
+  const charPaths = chars.map((ch, i) => {
+    const angle = (startAngle + i * charAngle) * Math.PI / 180;
+    const x = cx + textRadius * Math.cos(angle);
+    const y = cy + textRadius * Math.sin(angle);
+    const rot = startAngle + i * charAngle + 90;
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}"
+      font-family="Arial,sans-serif" font-size="9" font-weight="700"
+      fill="${pc}" text-anchor="middle" dominant-baseline="middle"
+      transform="rotate(${rot.toFixed(1)},${x.toFixed(1)},${y.toFixed(1)})">${ch}</text>`;
+  }).join('');
+
+  const logoContent = logoBase64
+    ? `<image href="${logoBase64}" x="${cx-28}" y="${cy-28}" width="56" height="56" preserveAspectRatio="xMidYMid meet"/>`
+    : `<text x="${cx}" y="${cy+8}" font-family="'Bebas Neue',Arial Black,sans-serif" font-size="22"
+        fill="${pc}" text-anchor="middle" font-weight="900">${nombre.slice(0,3)}</text>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <!-- Borde exterior -->
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${pc}" stroke-width="2.5" opacity="0.85"/>
+    <!-- Borde interior -->
+    <circle cx="${cx}" cy="${cy}" r="${r-14}" fill="none" stroke="${pc}" stroke-width="0.8" opacity="0.4"/>
+    <!-- Logo o iniciales -->
+    ${logoContent}
+    <!-- Texto circular -->
+    ${charPaths}
+    <!-- Puntos separadores -->
+    <circle cx="${cx + textRadius * Math.cos((startAngle - 8) * Math.PI/180)}"
+            cy="${cy + textRadius * Math.sin((startAngle - 8) * Math.PI/180)}"
+            r="1.5" fill="${pc}" opacity="0.6"/>
+    <circle cx="${cx + textRadius * Math.cos((startAngle + totalAngle + 8) * Math.PI/180)}"
+            cy="${cy + textRadius * Math.sin((startAngle + totalAngle + 8) * Math.PI/180)}"
+            r="1.5" fill="${pc}" opacity="0.6"/>
+  </svg>`;
+}
+
+function svgToDataURL(svgString) {
+  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+}
+
+// Se llama al escribir el nombre del CEO
+function onCEONameChange() {
+  const nombre = document.getElementById('emp_gerente').value.trim();
+  generarFirmaSVG(nombre);
+}
+
+function generarFirmaSVG(nombreOverride) {
+  const nombre = nombreOverride !== undefined
+    ? nombreOverride
+    : document.getElementById('emp_gerente').value.trim();
+
+  const preview = document.getElementById('firma_preview');
+  const hiddenInput = document.getElementById('emp_firma_svg');
+
+  if (!nombre) {
+    preview.innerHTML = '<span style="color:#bbb;font-size:12px">— escribe el nombre del CEO —</span>';
+    hiddenInput.value = '';
+    return;
+  }
+  const svg = generarFirmaSVGFromName(nombre);
+  preview.innerHTML = svg;
+  hiddenInput.value = svg;
+}
+
+function actualizarCuno() {
+  const nombre = document.getElementById('emp_nombre').value.trim();
+  const color  = document.getElementById('emp_color1').value || '#6366F1';
+  const svg    = generarCunoSVG(nombre, _logoBase64, color);
+  const preview = document.getElementById('cuno_preview');
+  const hiddenInput = document.getElementById('emp_cuno_svg');
+  if (preview) preview.innerHTML = svg;
+  hiddenInput.value = svg;
+}
+
+// ─────────────────────────────────────────────
+// MODAL EMPRESA — PREPARAR & GUARDAR
+// ─────────────────────────────────────────────
+
 function prepareModalEmpresa(key) {
-  _logoBase64=null;
-  document.getElementById('emp_id').value=key||'';
-  document.getElementById('emp_logo_file').value='';
-  document.getElementById('emp_logo_preview').innerHTML='🏢';
-  document.getElementById('emp_color_manual').style.display='none';
-  document.getElementById('emp_palette_label').textContent='Sube un logo para detectar colores automáticamente';
-  ['swatch1','swatch2','swatch3'].forEach((id,i)=>{
-    document.getElementById(id).style.background=['#6366F1','#0EA5E9','#22C55E'][i];
+  _logoBase64 = null;
+  document.getElementById('emp_id').value = key || '';
+  document.getElementById('emp_logo_file').value = '';
+  document.getElementById('emp_logo_preview').innerHTML = '🏢';
+  document.getElementById('emp_palette_label').textContent = 'Paleta automática';
+  ['swatch1','swatch2','swatch3'].forEach((id,i) => {
+    document.getElementById(id).style.background = ['#6366F1','#0EA5E9','#22C55E'][i];
   });
-  document.getElementById('modalEmpresaTitle').innerHTML=key?'EDITAR <span>EMPRESA</span>':'NUEVA <span>EMPRESA</span>';
+  document.getElementById('modalEmpresaTitle').innerHTML = key
+    ? 'EDITAR <span>EMPRESA</span>' : 'NUEVA <span>EMPRESA</span>';
 
-  if(key) {
-    const emp=getEmpresa(key); if(!emp) return;
-    _logoBase64=emp.logo||null;
-    if(emp.logo) document.getElementById('emp_logo_preview').innerHTML=`<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain">`;
-    const fields={emp_nombre:'nombre',emp_sub:'sub',emp_ein:'ein',emp_prefix:'dbPrefix',
-      emp_direccion:'direccion',emp_email:'email',emp_tel:'tel',emp_banco:'banco',
-      emp_swift:'swift',emp_cuenta:'cuenta',emp_gerente:'gerente',emp_presidente:'presidente'};
-    Object.entries(fields).forEach(([elId,prop])=>{ document.getElementById(elId).value=emp[prop]||''; });
-    document.getElementById('emp_cargo').value=emp.cargoGerente||'';
-    document.getElementById('emp_prefix').readOnly=true;
-    const c1=emp.colorPrimary||'#6366F1', c2=emp.colorSecondary||'#0EA5E9', c3=emp.colorAccent||'#22C55E';
-    ['emp_color1','emp_color2','emp_color3'].forEach((id,i)=>{
-      document.getElementById(id).value=[c1,c2,c3][i];
-      document.getElementById(id+'_hex').value=[c1,c2,c3][i];
+  // Limpiar firma/cuño
+  document.getElementById('firma_preview').innerHTML = '<span style="color:#bbb;font-size:12px">— escribe el nombre del CEO —</span>';
+  document.getElementById('cuno_preview').innerHTML  = '<span style="color:#bbb;font-size:12px">— sube el logo —</span>';
+  document.getElementById('emp_firma_svg').value = '';
+  document.getElementById('emp_cuno_svg').value  = '';
+
+  if (key) {
+    const emp = getEmpresa(key); if (!emp) return;
+    _logoBase64 = emp.logo || null;
+    if (emp.logo) document.getElementById('emp_logo_preview').innerHTML =
+      `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain">`;
+
+    const fields = {
+      emp_nombre:'nombre', emp_sub:'sub', emp_ein:'ein', emp_prefix:'dbPrefix',
+      emp_direccion:'direccion', emp_email:'email', emp_tel:'tel',
+      emp_banco:'banco', emp_swift:'swift', emp_cuenta:'cuenta',
+      emp_gerente:'gerente'
+    };
+    Object.entries(fields).forEach(([elId, prop]) => {
+      document.getElementById(elId).value = emp[prop] || '';
     });
-    document.getElementById('swatch1').style.background=c1;
-    document.getElementById('swatch2').style.background=c2;
-    document.getElementById('swatch3').style.background=c3;
-    document.getElementById('emp_palette_label').textContent='Colores guardados — ajusta si deseas';
-    document.getElementById('emp_color_manual').style.display='block';
-    updateThemePreview(c1,c2,c3);
+    document.getElementById('emp_cargo').value = emp.cargoGerente || '';
+    document.getElementById('emp_prefix').readOnly = true;
+
+    // Colores guardados → inputs hidden
+    document.getElementById('emp_color1').value = emp.colorPrimary   || '#6366F1';
+    document.getElementById('emp_color2').value = emp.colorSecondary || '#0EA5E9';
+    document.getElementById('emp_color3').value = emp.colorAccent    || '#22C55E';
+
+    // Swatches
+    document.getElementById('swatch1').style.background = emp.colorPrimary   || '#6366F1';
+    document.getElementById('swatch2').style.background = emp.colorSecondary || '#0EA5E9';
+    document.getElementById('swatch3').style.background = emp.colorAccent    || '#22C55E';
+    document.getElementById('emp_palette_label').textContent = emp.logo ? 'Colores del logo' : 'Paleta automática';
+
+    // Firma y cuño — regenerar si hay nombre guardado
+    if (emp.firmaSVG) {
+      document.getElementById('emp_firma_svg').value = emp.firmaSVG;
+      document.getElementById('firma_preview').innerHTML = emp.firmaSVG;
+    } else if (emp.gerente) {
+      generarFirmaSVG(emp.gerente);
+    }
+    if (emp.cunoSVG) {
+      document.getElementById('emp_cuno_svg').value = emp.cunoSVG;
+      document.getElementById('cuno_preview').innerHTML = emp.cunoSVG;
+    } else {
+      actualizarCuno();
+    }
   } else {
-    document.getElementById('emp_prefix').readOnly=false;
+    document.getElementById('emp_prefix').readOnly = false;
     ['emp_nombre','emp_sub','emp_ein','emp_prefix','emp_direccion','emp_email','emp_tel',
-     'emp_banco','emp_swift','emp_cuenta','emp_gerente','emp_cargo','emp_presidente']
-      .forEach(id=>{ document.getElementById(id).value=''; });
+     'emp_banco','emp_swift','emp_cuenta','emp_gerente','emp_cargo']
+      .forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('emp_color1').value = '#6366F1';
+    document.getElementById('emp_color2').value = '#0EA5E9';
+    document.getElementById('emp_color3').value = '#22C55E';
   }
   document.getElementById('modalEmpresa').classList.add('open');
 }
@@ -2273,48 +2470,65 @@ function editEmpresaModal(key)    { prepareModalEmpresa(key);  }
 
 // ── Guardar empresa ──
 function saveEmpresa() {
-  const nombre=document.getElementById('emp_nombre').value.trim();
-  const prefix=document.getElementById('emp_prefix').value.trim();
-  if(!nombre){ toast('El nombre es obligatorio','error'); return; }
-  if(!prefix){ toast('El prefijo de BD es obligatorio','error'); return; }
-  if(!prefix.endsWith('_')){ toast('El prefijo debe terminar en _ (ej: acme_)','error'); return; }
-  const editKey=document.getElementById('emp_id').value;
-  const todas=getTodasEmpresas();
-  if(!editKey && Object.values(todas).some(e=>e.dbPrefix===prefix)){
+  const nombre = document.getElementById('emp_nombre').value.trim();
+  const prefix = document.getElementById('emp_prefix').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio','error'); return; }
+  if (!prefix) { toast('El prefijo de BD es obligatorio','error'); return; }
+  if (!prefix.endsWith('_')) { toast('El prefijo debe terminar en _ (ej: acme_)','error'); return; }
+
+  const editKey = document.getElementById('emp_id').value;
+  const todas   = getTodasEmpresas();
+  if (!editKey && Object.values(todas).some(e => e.dbPrefix === prefix)) {
     toast('Ya existe una empresa con ese prefijo','error'); return;
   }
-  const key=editKey||prefix.replace(/_$/,'');
-  const prev=editKey?todas[editKey]:{};
-  const data={
+
+  const key  = editKey || prefix.replace(/_$/, '');
+  const prev = editKey ? todas[editKey] : {};
+
+  // Si hay nombre de CEO pero no firma generada aún → generar ahora
+  const ceoNombre = document.getElementById('emp_gerente').value.trim();
+  let firmaSVG = document.getElementById('emp_firma_svg').value;
+  if (!firmaSVG && ceoNombre) firmaSVG = generarFirmaSVGFromName(ceoNombre);
+
+  // Cuño: regenerar siempre al guardar con datos frescos
+  const c1 = document.getElementById('emp_color1').value || '#6366F1';
+  const logoFinal = _logoBase64 !== null ? _logoBase64 : (prev.logo || null);
+  const cunoSVG = generarCunoSVG(nombre, logoFinal, c1);
+
+  const data = {
     key, nombre,
-    sub:        document.getElementById('emp_sub').value.trim()||nombre,
-    ein:        document.getElementById('emp_ein').value.trim(),
-    dbPrefix:   prefix,
-    direccion:  document.getElementById('emp_direccion').value.trim(),
-    email:      document.getElementById('emp_email').value.trim(),
-    tel:        document.getElementById('emp_tel').value.trim(),
-    colorPrimary:   document.getElementById('emp_color1').value||'#6366F1',
-    colorSecondary: document.getElementById('emp_color2').value||'#0EA5E9',
-    colorAccent:    document.getElementById('emp_color3').value||'#22C55E',
-    banco:      document.getElementById('emp_banco').value.trim(),
-    swift:      document.getElementById('emp_swift').value.trim(),
-    cuenta:     document.getElementById('emp_cuenta').value.trim(),
-    gerente:    document.getElementById('emp_gerente').value.trim(),
-    cargoGerente: document.getElementById('emp_cargo').value.trim(),
-    presidente: document.getElementById('emp_presidente').value.trim(),
-    logo: _logoBase64!==null ? _logoBase64 : (prev.logo||null)
+    sub:            document.getElementById('emp_sub').value.trim() || nombre,
+    ein:            document.getElementById('emp_ein').value.trim(),
+    dbPrefix:       prefix,
+    direccion:      document.getElementById('emp_direccion').value.trim(),
+    email:          document.getElementById('emp_email').value.trim(),
+    tel:            document.getElementById('emp_tel').value.trim(),
+    colorPrimary:   c1,
+    colorSecondary: document.getElementById('emp_color2').value || '#0EA5E9',
+    colorAccent:    document.getElementById('emp_color3').value || '#22C55E',
+    banco:          document.getElementById('emp_banco').value.trim(),
+    swift:          document.getElementById('emp_swift').value.trim(),
+    cuenta:         document.getElementById('emp_cuenta').value.trim(),
+    gerente:        ceoNombre,
+    cargoGerente:   document.getElementById('emp_cargo').value.trim(),
+    presidente:     ceoNombre, // compatibilidad
+    firmaSVG,
+    cunoSVG,
+    logo:           logoFinal
   };
-  todas[key]=data;
+
+  todas[key] = data;
   saveTodasEmpresas(todas);
-  if(empresaActual&&empresaActual.dbPrefix===data.dbPrefix){
-    empresaActual=data; applyEmpresaTheme(data);
+  if (empresaActual && empresaActual.dbPrefix === data.dbPrefix) {
+    empresaActual = data; applyEmpresaTheme(data);
   }
   closeModal('modalEmpresa');
   renderEmpresas();
   rebuildEmpresaSelector();
   updateBadges();
-  toast(editKey?'Empresa actualizada ✅':'Empresa creada ✅');
+  toast(editKey ? 'Empresa actualizada ✅' : 'Empresa creada ✅');
 }
+
 
 // ── Eliminar empresa ──
 function deleteEmpresa(key) {
