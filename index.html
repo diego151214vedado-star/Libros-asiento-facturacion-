@@ -2889,7 +2889,145 @@ function mostrarRecordatorioBackup(mensaje) {
   document.body.appendChild(div);
 }
 
-initEmpresas();
+// ═══════════════════════════════════════════════════
+// SEED DAL MIAMI — datos extraídos de informe PDF
+// Se ejecuta una vez, actualiza sin duplicar
+// ═══════════════════════════════════════════════════
+function seedDALMiami() {
+  const PREFIX = 'dalmiami_';
+  const KEY    = 'dalmiami';
+
+  // ── 1. Empresa ──
+  const todas = getTodasEmpresas();
+  const prev  = todas[KEY] || {};
+  todas[KEY]  = Object.assign({}, prev, {
+    key:            KEY,
+    nombre:         'DAL MIAMI EXPORT LLC',
+    sub:            'Export & Import',
+    ein:            'EIN: 93-1412443',
+    dbPrefix:       PREFIX,
+    direccion:      '3901 SW 78th CT Miami FL-33155',
+    email:          'dalmiami9@gmail.com',
+    tel:            '+1 786-839-1403',
+    gerente:        'Diego Hernández',
+    cargoGerente:   'Gerente Financiero',
+    presidente:     'Diego Hernández',
+    colorPrimary:   prev.colorPrimary   || '#E8202A',
+    colorSecondary: prev.colorSecondary || '#1A3CCC',
+    colorAccent:    prev.colorAccent    || '#22C55E',
+    logo:           prev.logo           || null,
+    firmaSVG:       prev.firmaSVG       || null,
+    cunoSVG:        prev.cunoSVG        || null,
+  });
+  saveTodasEmpresas(todas);
+
+  // ── 2. Clientes (upsert por nombre) ──
+  const clientesRaw = JSON.parse(localStorage.getItem(PREFIX + 'clientes') || '[]');
+  const upsertCliente = (nombre, pais, extra) => {
+    const idx = clientesRaw.findIndex(c => c.nombre.toLowerCase() === nombre.toLowerCase());
+    const obj = Object.assign({ id: uid(), nombre, pais: pais || 'Cuba' }, extra || {});
+    if (idx >= 0) Object.assign(clientesRaw[idx], obj);
+    else clientesRaw.push(obj);
+  };
+  upsertCliente('La Catedral SURL',   'Cuba', { cif: '50004348171' });
+  upsertCliente('CEDA SURL',          'Cuba', {});
+  upsertCliente('MERCY SURL',         'Cuba', {});
+  upsertCliente('Santa Barbara SURL', 'Cuba', {});
+  localStorage.setItem(PREFIX + 'clientes', JSON.stringify(clientesRaw));
+
+  // ── 3. Mercancías (upsert por nombre) ──
+  const mercsRaw = JSON.parse(localStorage.getItem(PREFIX + 'mercancias') || '[]');
+  const upsertMerc = (nombre, unidad, extra) => {
+    const idx = mercsRaw.findIndex(m => m.nombre.toLowerCase() === nombre.toLowerCase());
+    const obj = Object.assign({ id: uid(), nombre, unidad, categoria: 'Alimentos' }, extra || {});
+    if (idx >= 0) Object.assign(mercsRaw[idx], obj);
+    else mercsRaw.push(obj);
+  };
+  upsertMerc('Frozen 4x10 Lb PolyBagged',       'Caja',  { descripcion: 'Pollo congelado 4x10 Lb en bolsa' });
+  upsertMerc('Frozen Pork Boneless Loin',         'KG',    { descripcion: 'Lomo de cerdo deshuesado congelado' });
+  upsertMerc('Sanderson Farms Frozen Half Bird',  'Caja',  { descripcion: 'Pollo entero Sanderson Farms congelado, medio' });
+  localStorage.setItem(PREFIX + 'mercancias', JSON.stringify(mercsRaw));
+
+  // Refrescar listas para tener IDs disponibles
+  const clientes2  = JSON.parse(localStorage.getItem(PREFIX + 'clientes')   || '[]');
+  const mercs2     = JSON.parse(localStorage.getItem(PREFIX + 'mercancias') || '[]');
+  const cId = n  => (clientes2.find(c => c.nombre.toLowerCase().includes(n.toLowerCase())) || {}).id || '';
+  const mId = n  => (mercs2.find(m => m.nombre.toLowerCase().includes(n.toLowerCase()))   || {}).id || '';
+
+  // ── 4. Facturas (upsert por número) ──
+  const factsRaw = JSON.parse(localStorage.getItem(PREFIX + 'facturas') || '[]');
+  const upsertFact = (f) => {
+    const idx = factsRaw.findIndex(x => x.numero === f.numero);
+    if (idx >= 0) Object.assign(factsRaw[idx], f);
+    else factsRaw.push(Object.assign({ id: uid() }, f));
+  };
+
+  const facturas = [
+    // fecha, numero, cliente, mercancía, deuda, cobrado
+    ['2026-01-12','2601','La Catedral', 'Frozen 4x10', 18627.90, 19467.30],
+    ['2026-01-12','2602','CEDA',        'Frozen 4x10', 18627.90, 18627.90],
+    ['2026-01-12','2603','MERCY',       'Frozen 4x10', 18627.90, 20000.00],
+    ['2026-01-12','2604','Santa',       'Frozen 4x10', 18627.90, 18627.90],
+    ['2026-02-15','2605','La Catedral', 'Pork',        33176.00, 28275.16],
+    ['2026-02-15','2606','CEDA',        'Pork',        33168.00, 20000.00],
+    ['2026-02-15','2607','MERCY',       'Pork',        33172.00, 24974.50],
+    ['2026-04-08','2608','La Catedral', 'Sanderson',   12372.75,     0.00],
+    ['2026-04-08','2609','CEDA',        'Sanderson',   12372.75,     0.00],
+    ['2026-04-08','2610','MERCY',       'Sanderson',   12351.60,     0.00],
+  ];
+
+  facturas.forEach(([fecha, numero, cli, merc, deuda, cobrado]) => {
+    const saldo = Math.max(0, deuda - cobrado);
+    let estatus = 'Pendiente';
+    if (saldo <= 0)          estatus = 'Pagado';
+    else if (cobrado > 0)    estatus = 'Pagado parcialmente';
+    upsertFact({
+      fecha, numero,
+      clienteId:   cId(cli),
+      mercanciaId: mId(merc),
+      deuda,
+      arrastre:    Math.max(0, cobrado - deuda), // saldo a favor si pagó de más
+      estatus,
+    });
+  });
+  localStorage.setItem(PREFIX + 'facturas', JSON.stringify(factsRaw));
+
+  // ── 5. Pagos (upsert por factura+fecha) ──
+  const pagosRaw = JSON.parse(localStorage.getItem(PREFIX + 'pagos') || '[]');
+  const upsertPago = (p) => {
+    const idx = pagosRaw.findIndex(x => x.numero === p.numero && x.clienteId === p.clienteId);
+    if (idx >= 0) Object.assign(pagosRaw[idx], p);
+    else pagosRaw.push(Object.assign({ id: uid() }, p));
+  };
+
+  const pagos = [
+    ['2026-01-12','2601','La Catedral', 19467.30],
+    ['2026-01-12','2602','CEDA',        18627.90],
+    ['2026-01-12','2603','MERCY',       20000.00],
+    ['2026-01-12','2604','Santa',       18627.90],
+    ['2026-02-15','2605','La Catedral', 28275.16],
+    ['2026-02-15','2606','CEDA',        20000.00],
+    ['2026-02-15','2607','MERCY',       24974.50],
+  ];
+  pagos.forEach(([fecha, numero, cli, monto]) => {
+    if (monto > 0) upsertPago({ fecha, numero, clienteId: cId(cli), monto, notas: 'Importado desde informe PDF' });
+  });
+  localStorage.setItem(PREFIX + 'pagos', JSON.stringify(pagosRaw));
+
+  console.log('✅ Seed DAL Miami completado');
+}
+
+// Ejecutar seed una sola vez — controlado por flag en localStorage
+if (!localStorage.getItem('sifa_seed_dalmiami_v1')) {
+  // Esperar a que initEmpresas() haya corrido
+  setTimeout(() => {
+    seedDALMiami();
+    localStorage.setItem('sifa_seed_dalmiami_v1', '1');
+    console.log('✅ DAL Miami: empresa, clientes, productos y facturas cargados');
+  }, 200);
+}
+
+
 updateDate();
 setInterval(updateDate, 60000);
 
