@@ -1331,7 +1331,7 @@ document.querySelectorAll('.modal-overlay').forEach(m=>{ m.addEventListener('cli
 
 // ═══ SALDO ═══
 function getSaldo(fid) {
-  // Saldo = deuda - arrastre_aplicado - pagos_recibidos
+  // Saldo pendiente = deuda - arrastre - pagos recibidos
   const f=facturas.find(x=>x.id===fid); if(!f) return 0;
   const pagado=pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0);
   return parseFloat(f.deuda)-(parseFloat(f.arrastre)||0)-pagado;
@@ -1345,7 +1345,8 @@ function getEstatus(fid) {
   return 'Pagado parcialmente';
 }
 function getTotalIngreso(fid) {
-  // Cobrado bruto = pagos directos recibidos (puede superar la deuda si hubo sobrepago)
+  // Cobrado bruto = pagos directos (puede superar la deuda si hubo sobrepago)
+  // NO incluye arrastre, para mostrar el monto real recibido en esa factura
   return pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0);
 }
 function calcArrastre(clienteId,excludeId=null) {
@@ -1630,8 +1631,9 @@ function _abrirVentanaConciliacion(clienteId,desde,hasta) {
   movs.sort((a,b)=>a.fecha<b.fecha?-1:1);
   let sc=0; const filas=movs.map(mv=>{sc+=mv.monto;return{...mv,sc};});
   const totalF=fc.reduce((s,f)=>s+parseFloat(f.deuda),0);
-  // Total cobrado = suma de (deuda - saldo pendiente) por factura del cliente
-  const totalP=fc.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(parseFloat(f.deuda)-(sal>0?sal:0));},0);
+  // Total cobrado = pagos reales recibidos de facturas de este cliente
+  const fIds2=fc.map(f=>f.id);
+  const totalP=pc.filter(p=>fIds2.includes(p.facturaId)).reduce((s,p)=>s+p.monto,0);
   const sf=fc.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(sal>0?sal:0);},0);
   const filasHTML=filas.map((mv,i)=>{
     const tipo=mv.tipo==='factura'?'<span style="background:#fff3cd;color:#92600a;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700">FACTURA</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700">PAGO</span>';
