@@ -472,8 +472,12 @@ if ('serviceWorker' in navigator) {
       <span class="badge" id="badge-pagos">0</span>
     </button>
     <button class="nav-tab" onclick="showSection('invoices')" id="tab-invoices">
-      <span class="nav-icon">📋</span><span class="nav-label">Invoices</span>
+      <span class="nav-icon">📋</span><span class="nav-label">Facturas/Invoice</span>
       <span class="badge" id="badge-invoices">0</span>
+    </button>
+    <button class="nav-tab" onclick="showSection('documentos')" id="tab-documentos">
+      <span class="nav-icon">📄</span><span class="nav-label">Documentos</span>
+      <span class="badge" id="badge-documentos">0</span>
     </button>
 
     <div class="nav-section-label">Herramientas</div>
@@ -630,14 +634,33 @@ if ('serviceWorker' in navigator) {
 
 
   <!-- INVOICES -->
+  <!-- FACTURAS / INVOICES (generan deuda) -->
   <div class="section" id="section-invoices">
     <div class="page-header">
-      <div><div class="page-title">DOCUMENTOS <span>EMITIDOS</span></div><div class="page-sub">Invoices, facturas, conduce y más</div></div>
-      <button class="btn btn-primary" onclick="openModal('modalInvoice')">＋ Nuevo Documento</button>
+      <div>
+        <div class="page-title">FACTURAS / <span>INVOICES</span></div>
+        <div class="page-sub">Documentos financieros — crean deuda y aparecen en cobros</div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirNuevoDocFinanciero()">＋ Nueva Factura / Invoice</button>
     </div>
     <div class="table-wrapper">
-      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Tipo</th><th>Emisor</th><th>Cliente / Proveedor</th><th>Total</th><th>Acciones</th></tr></thead>
+      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Tipo</th><th>Emisor</th><th>Cliente</th><th>Total</th><th>Acciones</th></tr></thead>
       <tbody id="invoicesTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- DOCUMENTOS COMPLEMENTARIOS (no generan deuda) -->
+  <div class="section" id="section-documentos">
+    <div class="page-header">
+      <div>
+        <div class="page-title">DOCUMENTOS <span>COMPLEMENTARIOS</span></div>
+        <div class="page-sub">Conduces, órdenes de entrega y más — solo PDF, sin impacto financiero</div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirNuevoDocComplementario()">＋ Nuevo Documento</button>
+    </div>
+    <div class="table-wrapper">
+      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Tipo</th><th>Emisor</th><th>Cliente / Destinatario</th><th>Acciones</th></tr></thead>
+      <tbody id="documentosTable"></tbody></table>
     </div>
   </div>
 
@@ -751,12 +774,16 @@ if ('serviceWorker' in navigator) {
     <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap">
       <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
         <label>Tipo</label>
-        <select id="inv_tipo" onchange="onChangeTipoDoc()" style="font-weight:700;min-width:160px">
-          <option value="I">📋 Invoice</option>
-          <option value="F">🧾 Factura</option>
-          <option value="O">📦 Orden de Entrega</option>
-          <option value="C">🚚 Conduce</option>
-          <option value="__nuevo__">＋ Nuevo tipo...</option>
+        <select id="inv_tipo" onchange="onChangeTipoDoc()" style="font-weight:700;min-width:200px">
+          <optgroup label="── Financieros (crean deuda) ──">
+            <option value="I">📋 Invoice</option>
+            <option value="F">🧾 Factura</option>
+          </optgroup>
+          <optgroup label="── Complementarios (solo PDF) ──">
+            <option value="O">📦 Orden de Entrega</option>
+            <option value="C">🚚 Conduce</option>
+            <option value="__nuevo__">＋ Nuevo tipo...</option>
+          </optgroup>
         </select>
       </div>
       <div class="form-group" style="flex:1;margin-bottom:0">
@@ -1251,14 +1278,15 @@ function closeSidebar() {
 
 // ═══ NAV ═══
 const _SECTION_TITLES = {
-  dashboard: 'RESUMEN <span>GENERAL</span>',
-  clientes:  'GESTIÓN DE <span>CLIENTES</span>',
-  mercancias:'CATÁLOGO DE <span>PRODUCTOS</span>',
-  facturas:  'REGISTRO DE <span>FACTURAS</span>',
-  pagos:     'REGISTRO DE <span>COBROS</span>',
-  invoices:  'DOCUMENTOS <span>EMITIDOS</span>',
-  calc:      'FORMACIÓN DE <span>PRECIOS</span>',
-  empresas:  'SELECCIÓN DE <span>EMPRESA</span>',
+  dashboard:   'RESUMEN <span>GENERAL</span>',
+  clientes:    'GESTIÓN DE <span>CLIENTES</span>',
+  mercancias:  'CATÁLOGO DE <span>PRODUCTOS</span>',
+  facturas:    'REGISTRO DE <span>FACTURAS</span>',
+  pagos:       'REGISTRO DE <span>COBROS</span>',
+  invoices:    'FACTURAS / <span>INVOICES</span>',
+  documentos:  'DOCUMENTOS <span>COMPLEMENTARIOS</span>',
+  calc:        'FORMACIÓN DE <span>PRECIOS</span>',
+  empresas:    'SELECCIÓN DE <span>EMPRESA</span>',
 };
 
 function showSection(id) {
@@ -1295,13 +1323,14 @@ function showSection(id) {
 
   closeSidebar();
 
-  if (id === 'dashboard')  renderDashboard();
-  if (id === 'clientes')   renderClientes();
-  if (id === 'mercancias') renderMercancias();
-  if (id === 'facturas')   renderFacturas();
-  if (id === 'pagos')      renderPagos();
-  if (id === 'invoices')   renderInvoices();
-  if (id === 'calc')       renderCalc();
+  if (id === 'dashboard')   renderDashboard();
+  if (id === 'clientes')    renderClientes();
+  if (id === 'mercancias')  renderMercancias();
+  if (id === 'facturas')    renderFacturas();
+  if (id === 'pagos')       renderPagos();
+  if (id === 'invoices')    renderInvoices();
+  if (id === 'documentos')  renderDocumentos();
+  if (id === 'calc')        renderCalc();
 }
 
 
@@ -1331,7 +1360,6 @@ document.querySelectorAll('.modal-overlay').forEach(m=>{ m.addEventListener('cli
 
 // ═══ SALDO ═══
 function getSaldo(fid) {
-  // Saldo pendiente = deuda - arrastre - pagos recibidos
   const f=facturas.find(x=>x.id===fid); if(!f) return 0;
   const pagado=pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0);
   return parseFloat(f.deuda)-(parseFloat(f.arrastre)||0)-pagado;
@@ -1345,8 +1373,6 @@ function getEstatus(fid) {
   return 'Pagado parcialmente';
 }
 function getTotalIngreso(fid) {
-  // Cobrado bruto = pagos directos (puede superar la deuda si hubo sobrepago)
-  // NO incluye arrastre, para mostrar el monto real recibido en esa factura
   return pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0);
 }
 function calcArrastre(clienteId,excludeId=null) {
@@ -1631,9 +1657,8 @@ function _abrirVentanaConciliacion(clienteId,desde,hasta) {
   movs.sort((a,b)=>a.fecha<b.fecha?-1:1);
   let sc=0; const filas=movs.map(mv=>{sc+=mv.monto;return{...mv,sc};});
   const totalF=fc.reduce((s,f)=>s+parseFloat(f.deuda),0);
-  // Total cobrado = pagos reales recibidos de facturas de este cliente
-  const fIds2=fc.map(f=>f.id);
-  const totalP=pc.filter(p=>fIds2.includes(p.facturaId)).reduce((s,p)=>s+p.monto,0);
+  // Total cobrado = suma de (deuda - saldo pendiente) por factura del cliente
+  const totalP=fc.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(parseFloat(f.deuda)-(sal>0?sal:0));},0);
   const sf=fc.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(sal>0?sal:0);},0);
   const filasHTML=filas.map((mv,i)=>{
     const tipo=mv.tipo==='factura'?'<span style="background:#fff3cd;color:#92600a;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700">FACTURA</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700">PAGO</span>';
@@ -1886,13 +1911,56 @@ function getInvoiceData() {
   };
 }
 
+// ── Tipos financieros (crean deuda)
+const TIPOS_FINANCIEROS = ['I', 'F'];
+function esFinanciero(tipoKey) { return TIPOS_FINANCIEROS.includes(tipoKey); }
+
+function abrirNuevoDocFinanciero() {
+  populateInvoiceModal();
+  // Preseleccionar Invoice
+  document.getElementById('inv_tipo').value = 'I';
+  onChangeTipoDoc();
+  document.getElementById('modalInvoice').classList.add('open');
+  document.querySelectorAll('#modalInvoice input[type=date]').forEach(i => { if(!i.value) i.value = new Date().toISOString().split('T')[0]; });
+}
+
+function abrirNuevoDocComplementario() {
+  populateInvoiceModal();
+  // Preseleccionar Orden de Entrega
+  document.getElementById('inv_tipo').value = 'O';
+  onChangeTipoDoc();
+  document.getElementById('modalInvoice').classList.add('open');
+  document.querySelectorAll('#modalInvoice input[type=date]').forEach(i => { if(!i.value) i.value = new Date().toISOString().split('T')[0]; });
+}
+
 function guardarInvoice() {
   const data = getInvoiceData(); if (!data) return;
   const idx  = invoices.findIndex(x => x.id === data.id);
   if (idx >= 0) invoices[idx] = data; else invoices.push(data);
   saveConsecutivo(data.numero);
-  saveInvoicesDB(); closeModal('modalInvoice'); renderInvoices(); updateBadges();
-  toast('Documento guardado ✅');
+
+  // Si es financiero (I o F) → crear/actualizar deuda en facturas
+  if (esFinanciero(data.tipoKey) && data.clienteId && data.total > 0) {
+    const fExistente = facturas.find(f => f.invoiceId === data.id);
+    if (fExistente) {
+      // Actualizar deuda si cambió
+      const i = facturas.findIndex(f => f.invoiceId === data.id);
+      facturas[i] = { ...facturas[i], deuda: data.total, clienteId: data.clienteId,
+        mercanciaId: data.lineas[0]?.prodId || facturas[i].mercanciaId,
+        fecha: data.fecha, numero: data.numero };
+    } else {
+      // Crear nueva factura/deuda
+      facturas.push({ id: uid(), invoiceId: data.id, fecha: data.fecha,
+        numero: data.numero, clienteId: data.clienteId,
+        mercanciaId: data.lineas[0]?.prodId || '', deuda: data.total, arrastre: 0 });
+    }
+    save();
+    toast('Documento guardado y deuda registrada ✅');
+  } else {
+    toast('Documento guardado ✅');
+  }
+
+  saveInvoicesDB(); closeModal('modalInvoice'); renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
 }
 
 function generarInvoice() {
@@ -1900,9 +1968,141 @@ function generarInvoice() {
   const idx  = invoices.findIndex(x => x.id === data.id);
   if (idx >= 0) invoices[idx] = data; else invoices.push(data);
   saveConsecutivo(data.numero);
-  saveInvoicesDB(); renderInvoices(); updateBadges();
+
+  if (esFinanciero(data.tipoKey) && data.clienteId && data.total > 0) {
+    const fExistente = facturas.find(f => f.invoiceId === data.id);
+    if (!fExistente) {
+      facturas.push({ id: uid(), invoiceId: data.id, fecha: data.fecha,
+        numero: data.numero, clienteId: data.clienteId,
+        mercanciaId: data.lineas[0]?.prodId || '', deuda: data.total, arrastre: 0 });
+      save();
+    }
+  }
+
+  saveInvoicesDB(); renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
   abrirInvoicePDF(data); closeModal('modalInvoice');
 }
+
+// ── Render tabla Facturas/Invoices (solo financieros)
+function renderInvoices() {
+  const tbody = document.getElementById('invoicesTable');
+  const fin = invoices.filter(x => esFinanciero(x.tipoKey || 'I'));
+  if (!fin.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin facturas ni invoices aún</div><div class="empty-sub">Crea tu primer documento financiero</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = [...fin].sort((a,b)=>a.fecha<b.fecha?-1:1).map(inv => {
+    const c   = clientes.find(x => x.id === inv.clienteId);
+    const emp = inv.emisora || empresaActual || {};
+    const label = inv.titulo || getTipoLabel(inv.tipoKey || 'I');
+    // Buscar deuda vinculada
+    const fVinc = facturas.find(f => f.invoiceId === inv.id);
+    const saldo = fVinc ? getSaldo(fVinc.id) : null;
+    const saldoHTML = saldo !== null
+      ? `<span style="font-size:11px;color:${saldo<=0.01?'var(--green)':saldo>0?'var(--pink)':'var(--text2)'}">${saldo<=0.01?'✓ Pagado':fmtUSD(saldo)+' pendiente'}</span>`
+      : '';
+    return `<tr>
+      <td>${fmtDate(inv.fecha)}</td>
+      <td class="mono">${inv.numero}</td>
+      <td><span style="font-size:11px;font-weight:700;color:var(--blue)">${label}</span></td>
+      <td style="font-size:12px">${emp.nombre||'—'}</td>
+      <td>${c ? c.nombre : (inv.proveedor||'—')}<br>${saldoHTML}</td>
+      <td class="mono amount-pos">${fmtUSD(inv.total)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-secondary btn-sm" onclick="editInvoice('${inv.id}')">✏️</button>
+        <button class="btn btn-primary btn-sm" onclick="abrirInvoicePDF(invoices.find(x=>x.id==='${inv.id}'))">📋 PDF</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render tabla Documentos complementarios (O, C y custom)
+function renderDocumentos() {
+  const tbody = document.getElementById('documentosTable');
+  if (!tbody) return;
+  const docs = invoices.filter(x => !esFinanciero(x.tipoKey || 'I'));
+  if (!docs.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">Sin documentos complementarios</div><div class="empty-sub">Conduces, órdenes de entrega y más</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = [...docs].sort((a,b)=>a.fecha<b.fecha?-1:1).map(inv => {
+    const c   = clientes.find(x => x.id === inv.clienteId);
+    const emp = inv.emisora || empresaActual || {};
+    const label = inv.titulo || getTipoLabel(inv.tipoKey || 'O');
+    return `<tr>
+      <td>${fmtDate(inv.fecha)}</td>
+      <td class="mono">${inv.numero}</td>
+      <td><span style="font-size:11px;font-weight:700;color:var(--orange)">${label}</span></td>
+      <td style="font-size:12px">${emp.nombre||'—'}</td>
+      <td>${c ? c.nombre : (inv.proveedor||'—')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-secondary btn-sm" onclick="editInvoice('${inv.id}')">✏️</button>
+        <button class="btn btn-primary btn-sm" onclick="abrirInvoicePDF(invoices.find(x=>x.id==='${inv.id}'))">📄 PDF</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function editInvoice(id) {
+  const inv = invoices.find(x => x.id === id); if (!inv) return;
+  populateInvoiceModal();
+  // Cargar datos en el modal
+  document.getElementById('inv_id').value    = inv.id;
+  document.getElementById('inv_tipo').value  = inv.tipoKey || 'I';
+  document.getElementById('inv_titulo').value= inv.titulo  || '';
+  document.getElementById('inv_fecha').value = inv.fecha   || '';
+  document.getElementById('inv_numero').value= inv.numero  || '';
+  document.getElementById('inv_moneda').value= inv.moneda  || 'USD';
+  document.getElementById('inv_cliente').value = inv.clienteId || '';
+  document.getElementById('inv_proveedor').value = inv.proveedor || '';
+  document.getElementById('inv_flete').value = inv.flete   || '0';
+  document.getElementById('inv_seguro').value= inv.seguro  || '0';
+  document.getElementById('inv_origen').value= inv.origen  || '';
+  document.getElementById('inv_puerto').value= inv.puerto  || '';
+  document.getElementById('inv_peso').value  = inv.peso    || '';
+  document.getElementById('inv_bultos').value= inv.bultos  || '';
+  document.getElementById('inv_notas').value = inv.notas   || '';
+  document.getElementById('inv_entregado_por').value = inv.entregadoPor || '';
+  if(inv.clienteId) onSelectInvoiceCliente();
+  // Líneas
+  (inv.lineas||[]).forEach((l,i) => {
+    if(i>=4) return;
+    const n=i+1;
+    document.getElementById('inv_prod_'+n).value  = l.prodId||'';
+    document.getElementById('inv_cod_'+n).value   = l.codigo||'';
+    document.getElementById('inv_um_'+n).value    = l.um||'';
+    document.getElementById('inv_qty_'+n).value   = l.qty||'';
+    document.getElementById('inv_price_'+n).value = l.price||'';
+    calcLinea(n);
+  });
+  onChangeTipoDoc();
+  document.getElementById('modalInvoice').classList.add('open');
+}
+
+function deleteInvoice(id) {
+  const inv = invoices.find(x => x.id === id); if (!inv) return;
+  const esF = esFinanciero(inv.tipoKey||'I');
+  const msg = esF
+    ? `¿Eliminar este documento financiero?\n\nSi tiene deuda registrada, también se eliminará la factura vinculada.`
+    : `¿Eliminar este documento?`;
+  if (!confirm(msg)) return;
+  // Si es financiero, eliminar también la factura vinculada
+  if (esF) {
+    const fIdx = facturas.findIndex(f => f.invoiceId === id);
+    if (fIdx >= 0) {
+      const fid = facturas[fIdx].id;
+      pagos = pagos.filter(p => p.facturaId !== fid);
+      facturas.splice(fIdx, 1);
+      save();
+    }
+  }
+  invoices = invoices.filter(x => x.id !== id);
+  saveInvoicesDB(); renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
+  toast('Documento eliminado');
+}
+
 
 function fmtInvDate(d) {
   if (!d) return '—';
@@ -2062,39 +2262,6 @@ ${notasBlock}
   if (!win) toast('Permite ventanas emergentes', 'error');
   else setTimeout(() => { try { win.print(); } catch(e) {} }, 1200);
   setTimeout(() => URL.revokeObjectURL(url), 20000);
-}
-
-function renderInvoices() {
-  const tbody = document.getElementById('invoicesTable');
-  if (!invoices.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin documentos aún</div></div></td></tr>`;
-    return;
-  }
-  const todas = getTodasEmpresas();
-  tbody.innerHTML = [...invoices].sort((a,b) => a.fecha < b.fecha ? -1 : 1).map(inv => {
-    const c = clientes.find(x => x.id === inv.clienteId);
-    const label = inv.titulo || getTipoLabel(inv.tipoKey || 'I');
-    const emisora = inv.emisora || (inv.emisoraKey ? todas[inv.emisoraKey] : null) || empresaActual;
-    const emisoraNombre = emisora ? emisora.nombre.split(' ').slice(0,2).join(' ') : '—';
-    return `<tr>
-      <td>${fmtDate(inv.fecha)}</td>
-      <td class="mono" style="font-weight:700">${inv.numero}</td>
-      <td style="font-size:11px;color:var(--text2)">${label}</td>
-      <td style="font-size:11px">${emisoraNombre}</td>
-      <td>${c ? c.nombre : (inv.proveedor || '—')}</td>
-      <td class="mono amount-pos">${fmtUSD(inv.total)}</td>
-      <td style="white-space:nowrap">
-        <button class="btn btn-primary btn-sm" onclick="abrirInvoicePDF(invoices.find(x=>x.id==='${inv.id}'))">📋 PDF</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">✕</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function deleteInvoice(id) {
-  if (!confirm('¿Eliminar documento?')) return;
-  invoices = invoices.filter(x => x.id !== id);
-  saveInvoicesDB(); renderInvoices(); updateBadges(); toast('Documento eliminado');
 }
 
 function onSelectConsignatario() {
@@ -2734,7 +2901,10 @@ function updateBadges() {
   document.getElementById('badge-mercancias').textContent=mercancias.length;
   document.getElementById('badge-facturas').textContent=facturas.length;
   document.getElementById('badge-pagos').textContent=pagos.length;
-  document.getElementById('badge-invoices').textContent=invoices.length;
+  // Separar invoices financieros vs documentos complementarios
+  const finTypes=['I','F'];
+  document.getElementById('badge-invoices').textContent=invoices.filter(x=>finTypes.includes(x.tipoKey)).length;
+  document.getElementById('badge-documentos').textContent=invoices.filter(x=>!finTypes.includes(x.tipoKey)).length;
   document.getElementById('badge-calc').textContent=calculos.length;
   document.getElementById('badge-empresas').textContent=Object.keys(getTodasEmpresas()).length;
 }
