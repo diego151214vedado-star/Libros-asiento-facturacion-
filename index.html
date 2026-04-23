@@ -1331,14 +1331,27 @@ document.querySelectorAll('.modal-overlay').forEach(m=>{ m.addEventListener('cli
 
 // ═══ SALDO ═══
 function getSaldo(fid) {
+  // Saldo pendiente = deuda - arrastre aplicado - pagos recibidos
   const f=facturas.find(x=>x.id===fid); if(!f) return 0;
-  return parseFloat(f.deuda)-(parseFloat(f.arrastre)||0)-pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0);
+  const pagado=pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0);
+  const arrastre=parseFloat(f.arrastre)||0;
+  return parseFloat(f.deuda)-arrastre-pagado;
 }
 function getEstatus(fid) {
-  const saldo=getSaldo(fid), tp=pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0);
-  if(tp===0) return 'Pendiente'; if(saldo<=0.01) return 'Pagado'; return 'Pagado parcialmente';
+  const f=facturas.find(x=>x.id===fid); if(!f) return 'Pendiente';
+  const pagado=pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0);
+  const arrastre=parseFloat(f.arrastre)||0;
+  const totalAplicado=pagado+arrastre;
+  if(totalAplicado===0) return 'Pendiente';
+  if(getSaldo(fid)<=0.01) return 'Pagado';
+  return 'Pagado parcialmente';
 }
-function getTotalIngreso(fid) { return pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0); }
+function getTotalIngreso(fid) {
+  // Cobrado = pagos directos + arrastre aplicado (para que coincida con la deuda)
+  const f=facturas.find(x=>x.id===fid); if(!f) return 0;
+  const pagado=pagos.filter(p=>p.facturaId===fid).reduce((s,p)=>s+p.monto,0);
+  return pagado+(parseFloat(f.arrastre)||0);
+}
 function calcArrastre(clienteId,excludeId=null) {
   let arr=0; facturas.filter(f=>f.clienteId===clienteId&&f.id!==excludeId).forEach(f=>{const s=getSaldo(f.id);if(s<0)arr+=Math.abs(s);});
   return arr;
@@ -1564,7 +1577,11 @@ function renderDashboard() {
   if (btnEdit) btnEdit.style.display = empresaActual ? 'inline-flex' : 'none';
 
   const totalDeuda=facturas.reduce((s,f)=>s+parseFloat(f.deuda),0);
-  const totalIngresado=pagos.reduce((s,p)=>s+p.monto,0);
+  // Total cobrado = lo que ya no se debe (deuda - saldo pendiente positivo)
+  const totalIngresado=facturas.reduce((s,f)=>{
+    const sal=getSaldo(f.id);
+    return s+(parseFloat(f.deuda)-(sal>0?sal:0));
+  },0);
   const totalSaldo=facturas.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(sal>0?sal:0);},0);
   const pendientes=facturas.filter(f=>getEstatus(f.id)!=='Pagado').length;
   document.getElementById('statsRow').innerHTML=`<div class="stat-card"><div class="stat-label">Total Facturado</div><div class="stat-value blue">$${(totalDeuda/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Total Ingresado</div><div class="stat-value green">$${(totalIngresado/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Saldo por Cobrar</div><div class="stat-value ${totalSaldo>0?'red':'green'}">$${(Math.abs(totalSaldo)/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Pendientes</div><div class="stat-value orange">${pendientes}</div></div>`;
@@ -1585,7 +1602,10 @@ function compartirDashboard() {
   try {
     const hoy=new Date().toLocaleDateString('es',{year:'numeric',month:'long',day:'numeric'});
     const totalDeuda=facturas.reduce((s,f)=>s+parseFloat(f.deuda),0);
-    const totalIngresado=pagos.reduce((s,p)=>s+p.monto,0);
+    const totalIngresado=facturas.reduce((s,f)=>{
+      const sal=getSaldo(f.id);
+      return s+(parseFloat(f.deuda)-(sal>0?sal:0));
+    },0);
     const totalSaldo=facturas.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(sal>0?sal:0);},0);
     const tasaCobro=totalDeuda>0?((totalIngresado/totalDeuda)*100).toFixed(1):'0.0';
     const rows=[...facturas].sort((a,b)=>a.fecha<b.fecha?-1:1).map((f,i)=>{
@@ -1619,7 +1639,9 @@ function _abrirVentanaConciliacion(clienteId,desde,hasta) {
   pc.forEach(p=>{const f=facturas.find(x=>x.id===p.facturaId);movs.push({fecha:p.fecha,tipo:'pago',monto:-p.monto,num:f?f.numero:'—',desc:p.notas||'Pago recibido'});});
   movs.sort((a,b)=>a.fecha<b.fecha?-1:1);
   let sc=0; const filas=movs.map(mv=>{sc+=mv.monto;return{...mv,sc};});
-  const totalF=fc.reduce((s,f)=>s+parseFloat(f.deuda),0), totalP=pc.reduce((s,p)=>s+p.monto,0);
+  const totalF=fc.reduce((s,f)=>s+parseFloat(f.deuda),0);
+  // Total cobrado = suma de (deuda - saldo pendiente) por factura del cliente
+  const totalP=fc.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(parseFloat(f.deuda)-(sal>0?sal:0));},0);
   const sf=fc.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(sal>0?sal:0);},0);
   const filasHTML=filas.map((mv,i)=>{
     const tipo=mv.tipo==='factura'?'<span style="background:#fff3cd;color:#92600a;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700">FACTURA</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700">PAGO</span>';
