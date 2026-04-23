@@ -2573,10 +2573,55 @@ function saveEmpresa() {
 function deleteEmpresa(key) {
   const todas=getTodasEmpresas();
   const emp=todas[key]; if(!emp) return;
+
+  // Bloquear si es la empresa activa
   if(empresaActual&&empresaActual.dbPrefix===emp.dbPrefix){
     toast('No puedes eliminar la empresa activa','error'); return;
   }
-  if(!confirm(`¿Eliminar "${emp.nombre}"?\n\nSus datos en el dispositivo NO se borran.`)) return;
+
+  // Revisar si tiene datos en localStorage
+  const p=emp.dbPrefix;
+  const nClientes  = JSON.parse(localStorage.getItem(p+'clientes')  ||'[]').length;
+  const nFacturas  = JSON.parse(localStorage.getItem(p+'facturas')  ||'[]').length;
+  const nPagos     = JSON.parse(localStorage.getItem(p+'pagos')     ||'[]').length;
+  const nMerc      = JSON.parse(localStorage.getItem(p+'mercancias')||'[]').length;
+
+  // Verificar si hay saldo pendiente
+  const facts  = JSON.parse(localStorage.getItem(p+'facturas')||'[]');
+  const pagosE = JSON.parse(localStorage.getItem(p+'pagos')   ||'[]');
+  let saldoPendiente=0;
+  facts.forEach(f=>{
+    const cobrado=pagosE.filter(pg=>pg.facturaId===f.id).reduce((s,pg)=>s+pg.monto,0);
+    const arrastre=parseFloat(f.arrastre)||0;
+    const saldo=parseFloat(f.deuda)-arrastre-cobrado;
+    if(saldo>0.01) saldoPendiente+=saldo;
+  });
+
+  // Si tiene datos, mostrar resumen y bloquear
+  if(nClientes>0||nFacturas>0||nPagos>0||nMerc>0){
+    const detalles=[];
+    if(nClientes>0)  detalles.push(`• ${nClientes} cliente${nClientes>1?'s':''}`);
+    if(nMerc>0)      detalles.push(`• ${nMerc} producto${nMerc>1?'s':''}`);
+    if(nFacturas>0)  detalles.push(`• ${nFacturas} factura${nFacturas>1?'s':''}`);
+    if(nPagos>0)     detalles.push(`• ${nPagos} cobro${nPagos>1?'s':''}`);
+    if(saldoPendiente>0.01) detalles.push(`• Saldo pendiente: ${fmtUSD(saldoPendiente)}`);
+
+    const bloquear=saldoPendiente>0.01;
+    if(bloquear){
+      alert(`❌ No se puede eliminar "${emp.nombre}"\n\nTiene saldo pendiente de cobro:\n\n${detalles.join('\n')}\n\nSalda todas las facturas antes de eliminar la empresa.`);
+      return;
+    }
+
+    // Tiene datos pero sin saldo pendiente — advertir y pedir confirmación doble
+    const confirmar1=confirm(`⚠️ La empresa "${emp.nombre}" tiene datos:\n\n${detalles.join('\n')}\n\n¿Estás seguro de que quieres eliminarla del sistema?`);
+    if(!confirmar1) return;
+    const confirmar2=confirm(`⚠️ ÚLTIMA CONFIRMACIÓN\n\nSe eliminará "${emp.nombre}" del sistema.\n\nSus datos quedarán huérfanos en el dispositivo pero NO se podrán ver desde SiFa.\n\n¿Confirmas?`);
+    if(!confirmar2) return;
+  } else {
+    // Sin datos — confirmación simple
+    if(!confirm(`¿Eliminar "${emp.nombre}"?\n\nNo tiene datos registrados.`)) return;
+  }
+
   delete todas[key];
   saveTodasEmpresas(todas);
   renderEmpresas(); rebuildEmpresaSelector(); updateBadges();
