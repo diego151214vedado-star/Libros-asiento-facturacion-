@@ -3074,45 +3074,46 @@ function importarBackup(input) {
       const backup = JSON.parse(e.target.result);
       if (!backup.sistema) { toast('Archivo de backup no válido', 'error'); return; }
 
-      const total = Object.keys(backup.sistema).length;
-      if (!confirm(`¿Restaurar backup del ${backup.fecha ? new Date(backup.fecha).toLocaleDateString('es') : 'fecha desconocida'}?\n\nSe restaurarán ${total} colecciones de datos.\n\nLos datos existentes NO se borrarán — solo se añadirán los que falten.`)) return;
+      const fechaStr = backup.fecha ? new Date(backup.fecha).toLocaleDateString('es') : 'fecha desconocida';
+      if (!confirm(`¿Restaurar backup del ${fechaStr}?\n\n⚠️ ATENCIÓN: Esto REEMPLAZARÁ completamente los datos actuales con los del backup.\n\n¿Confirmas?`)) return;
 
+      // Borrar primero TODOS los datos actuales de todas las empresas conocidas
+      const todas = getTodasEmpresas();
+      Object.values(todas).forEach(emp => {
+        const p = emp.dbPrefix;
+        ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos'].forEach(t => {
+          localStorage.removeItem(p + t);
+        });
+      });
+
+      // También borrar del backup cualquier prefijo que aparezca
+      Object.keys(backup.sistema).forEach(k => {
+        const match = k.match(/^(.+?)(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos)$/);
+        if (match) localStorage.removeItem(k);
+      });
+
+      // Restaurar todo del backup directamente
       let restaurados = 0;
       Object.entries(backup.sistema).forEach(([k, v]) => {
-        // No machacar datos que ya existen si son arrays con contenido
-        const actual = localStorage.getItem(k);
-        if (actual) {
-          try {
-            const arrActual = JSON.parse(actual);
-            const arrBackup = Array.isArray(v) ? v : null;
-            if (Array.isArray(arrActual) && arrActual.length > 0 && arrBackup) {
-              // Fusionar: añadir items del backup que no existan (por id)
-              const ids = new Set(arrActual.map(x => x.id));
-              const nuevos = arrBackup.filter(x => x.id && !ids.has(x.id));
-              if (nuevos.length > 0) {
-                localStorage.setItem(k, JSON.stringify([...arrActual, ...nuevos]));
-                restaurados += nuevos.length;
-              }
-              return;
-            }
-          } catch(e) {}
-        }
-        // Clave no existe o no es array — restaurar directamente
         localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
         restaurados++;
       });
 
-      // Recargar datos de empresa activa
-      if (empresaActual) {
-        cargarDatosEmpresa(empresaActual);
-        updateBadges();
-        renderDashboard();
+      // Recargar datos
+      initEmpresas();
+      const savedKey = localStorage.getItem('dal_empresa_actual');
+      if (savedKey && getEmpresa(savedKey)) {
+        cargarDatosEmpresa(getEmpresa(savedKey));
+        applyEmpresaTheme(getEmpresa(savedKey));
       }
+      updateBadges();
+      renderDashboard();
 
       input.value = '';
-      toast(`✅ Restauración completa — ${restaurados} elementos recuperados`);
+      toast(`✅ Restauración completa — datos reemplazados correctamente`);
 
     } catch(err) {
+      console.error(err);
       toast('Error al leer el archivo de backup', 'error');
     }
   };
