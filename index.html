@@ -1223,8 +1223,6 @@ function seleccionarEmpresaDirecta(key) {
 // ═══ SELECTOR VISUAL ═══
 // Ya no hay overlay — el selector ES la sección empresas
 function abrirSelectorEmpresas() { showSection('empresas'); }
-function rebuildEmpresaSelector() { renderEmpresas(); }
-
 // ═══ SAVE — con verificación de empresa activa ═══
 function _assertEmpresa() {
   if (!empresaActual) { console.error('SiFa: save() sin empresa activa'); return false; }
