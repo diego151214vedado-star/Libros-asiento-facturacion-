@@ -1527,10 +1527,66 @@ function renderFacturas() {
     const saldo=getSaldo(f.id), ingreso=getTotalIngreso(f.id), est=getEstatus(f.id);
     const cls=est==='Pagado'?'status-pagado':est==='Pagado parcialmente'?'status-parcial':'status-pendiente';
     const sc=saldo>0?'amount-neg':saldo<0?'amount-pos':'amount-zero';
-    return `<tr><td>${fmtDate(f.fecha)}</td><td class="mono">${f.numero}</td><td>${c?c.nombre:'—'}</td><td style="max-width:180px;font-size:12px">${m?m.nombre:'—'}</td><td class="mono ${f.arrastre>0?'amount-pos':'amount-zero'}">${f.arrastre>0?fmtUSD(f.arrastre):'—'}</td><td class="mono">${fmtUSD(f.deuda)}</td><td class="mono amount-pos">${fmtUSD(ingreso)}</td><td class="mono ${sc}">${fmtUSD(saldo)}</td><td><span class="status ${cls}">${est}</span></td><td style="white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="editFactura('${f.id}')">✏️</button><button class="btn btn-blue btn-sm" onclick="quickPago('${f.id}')">＋ Pago</button><button class="btn btn-danger btn-sm" onclick="deleteFactura('${f.id}')">✕</button></td></tr>`;
+    // Buscar invoice vinculado
+    const invVinc = invoices.find(x => x.id === f.invoiceId);
+    const btnPDF = invVinc
+      ? `<button class="btn btn-primary btn-sm" onclick="abrirInvoicePDF(invoices.find(x=>x.id==='${invVinc.id}'))" title="Ver Invoice PDF">📋</button>`
+      : `<button class="btn btn-secondary btn-sm" onclick="generarInvoiceDesdeFactura('${f.id}')" title="Crear Invoice">📋</button>`;
+    return `<tr><td>${fmtDate(f.fecha)}</td><td class="mono">${f.numero}</td><td>${c?c.nombre:'—'}</td><td style="max-width:180px;font-size:12px">${m?m.nombre:'—'}</td><td class="mono ${f.arrastre>0?'amount-pos':'amount-zero'}">${f.arrastre>0?fmtUSD(f.arrastre):'—'}</td><td class="mono">${fmtUSD(f.deuda)}</td><td class="mono amount-pos">${fmtUSD(ingreso)}</td><td class="mono ${sc}">${fmtUSD(saldo)}</td><td><span class="status ${cls}">${est}</span></td><td style="white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="editFactura('${f.id}')">✏️</button>${btnPDF}<button class="btn btn-blue btn-sm" onclick="quickPago('${f.id}')">＋ Pago</button><button class="btn btn-danger btn-sm" onclick="deleteFactura('${f.id}')">✕</button></td></tr>`;
   }).join('');
 }
 function quickPago(fid){openModal('modalPago');setTimeout(()=>{populatePagoSelects();document.getElementById('pg_factura').value=fid;onSelectFacturaPago();},50);}
+
+function generarInvoiceDesdeFactura(fid) {
+  const f = facturas.find(x => x.id === fid); if (!f) return;
+  const c = clientes.find(x => x.id === f.clienteId);
+  const m = mercancias.find(x => x.id === f.mercanciaId);
+
+  // Abrir modal Invoice pre-rellenado
+  populateInvoiceModal();
+  document.getElementById('modalInvoiceTitle').innerHTML = 'NUEVA <span>FACTURA / INVOICE</span>';
+
+  // Datos de la factura
+  document.getElementById('inv_id').value     = '';
+  document.getElementById('inv_tipo').value   = 'I';
+  document.getElementById('inv_titulo').value = 'INVOICE';
+  document.getElementById('inv_fecha').value  = f.fecha;
+  document.getElementById('inv_numero').value = f.numero;
+  document.getElementById('inv_moneda').value = 'USD';
+
+  // Cliente
+  if (c) {
+    document.getElementById('inv_cliente').value = c.id;
+    onSelectInvoiceCliente();
+  }
+
+  // Producto en línea 1
+  if (m) {
+    document.getElementById('inv_prod_1').value = m.id;
+    document.getElementById('inv_um_1').value   = m.unidad || 'KG';
+    document.getElementById('inv_cod_1').value  = m.codigo || '';
+    // Precio unitario — calculado desde el total si hay precio en mercancía
+    if (m.precio) {
+      document.getElementById('inv_price_1').value = m.precio;
+    }
+    document.getElementById('inv_price_1').value = m.precio || '';
+  }
+
+  // Campos logísticos por defecto DAL Miami
+  document.getElementById('inv_condicion_sel').value = 'SEGÚN INCOTERMS 2020';
+  document.getElementById('inv_incoterm').value      = 'CFR';
+  document.getElementById('inv_consignatario_sel').value = 'EMPRESA EXPORTADORA DE ALIMENTOS Y PRODUCTOS VARIOS';
+
+  // Vinculación: guardar el fid en un campo oculto para vincular al guardar
+  document.getElementById('inv_id').value = ''; // nuevo invoice
+  // Guardar referencia a la factura origen
+  document.getElementById('inv_id').dataset.facturaOrigen = fid;
+
+  onChangeTipoDoc();
+  document.getElementById('modalInvoice').classList.add('open');
+  document.querySelectorAll('#modalInvoice input[type=date]').forEach(i => { if(!i.value) i.value = new Date().toISOString().split('T')[0]; });
+  toast('Completa los datos del invoice y pulsa Generar PDF');
+}
 
 // ═══ PAGOS ═══
 function populatePagoSelects() {
@@ -1949,17 +2005,19 @@ function guardarInvoice() {
   if (idx >= 0) invoices[idx] = data; else invoices.push(data);
   saveConsecutivo(data.numero);
 
-  // Si es financiero (I o F) → crear/actualizar deuda en facturas
+  // Vincular a factura origen si viene de generarInvoiceDesdeFactura
+  const facturaOrigenId = document.getElementById('inv_id').dataset.facturaOrigen;
+
   if (esFinanciero(data.tipoKey) && data.clienteId && data.total > 0) {
-    const fExistente = facturas.find(f => f.invoiceId === data.id);
+    // Buscar por invoiceId o por facturaOrigen
+    const fExistente = facturas.find(f => f.invoiceId === data.id || f.id === facturaOrigenId);
     if (fExistente) {
-      // Actualizar deuda si cambió
-      const i = facturas.findIndex(f => f.invoiceId === data.id);
-      facturas[i] = { ...facturas[i], deuda: data.total, clienteId: data.clienteId,
+      const i = facturas.findIndex(f => f.id === fExistente.id);
+      facturas[i] = { ...facturas[i], invoiceId: data.id, deuda: data.total,
+        clienteId: data.clienteId,
         mercanciaId: data.lineas[0]?.prodId || facturas[i].mercanciaId,
         fecha: data.fecha, numero: data.numero };
     } else {
-      // Crear nueva factura/deuda
       facturas.push({ id: uid(), invoiceId: data.id, fecha: data.fecha,
         numero: data.numero, clienteId: data.clienteId,
         mercanciaId: data.lineas[0]?.prodId || '', deuda: data.total, arrastre: 0 });
@@ -1970,6 +2028,7 @@ function guardarInvoice() {
     toast('Documento guardado ✅');
   }
 
+  delete document.getElementById('inv_id').dataset.facturaOrigen;
   saveInvoicesDB(); closeModal('modalInvoice'); renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
 }
 
@@ -1979,16 +2038,25 @@ function generarInvoice() {
   if (idx >= 0) invoices[idx] = data; else invoices.push(data);
   saveConsecutivo(data.numero);
 
+  const facturaOrigenId = document.getElementById('inv_id').dataset.facturaOrigen;
+
   if (esFinanciero(data.tipoKey) && data.clienteId && data.total > 0) {
-    const fExistente = facturas.find(f => f.invoiceId === data.id);
-    if (!fExistente) {
+    const fExistente = facturas.find(f => f.invoiceId === data.id || f.id === facturaOrigenId);
+    if (fExistente) {
+      const i = facturas.findIndex(f => f.id === fExistente.id);
+      facturas[i] = { ...facturas[i], invoiceId: data.id, deuda: data.total,
+        clienteId: data.clienteId,
+        mercanciaId: data.lineas[0]?.prodId || facturas[i].mercanciaId,
+        fecha: data.fecha, numero: data.numero };
+    } else {
       facturas.push({ id: uid(), invoiceId: data.id, fecha: data.fecha,
         numero: data.numero, clienteId: data.clienteId,
         mercanciaId: data.lineas[0]?.prodId || '', deuda: data.total, arrastre: 0 });
-      save();
     }
+    save();
   }
 
+  delete document.getElementById('inv_id').dataset.facturaOrigen;
   saveInvoicesDB(); renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
   abrirInvoicePDF(data); closeModal('modalInvoice');
 }
