@@ -759,6 +759,7 @@ if ('serviceWorker' in navigator) {
 <!-- MODAL INVOICE -->
 <div class="modal-overlay" id="modalInvoice" style="z-index:250;overflow-y:auto">
   <div class="modal" style="max-width:700px">
+    <div class="modal-title" id="modalInvoiceTitle">NUEVO <span>DOCUMENTO</span></div>
     <input type="hidden" id="inv_id">
 
     <!-- Empresa emisora -->
@@ -1657,8 +1658,8 @@ function _abrirVentanaConciliacion(clienteId,desde,hasta) {
   movs.sort((a,b)=>a.fecha<b.fecha?-1:1);
   let sc=0; const filas=movs.map(mv=>{sc+=mv.monto;return{...mv,sc};});
   const totalF=fc.reduce((s,f)=>s+parseFloat(f.deuda),0);
-  // Total cobrado = suma de (deuda - saldo pendiente) por factura del cliente
-  const totalP=fc.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(parseFloat(f.deuda)-(sal>0?sal:0));},0);
+  const fIds2=fc.map(f=>f.id);
+  const totalP=pc.filter(p=>fIds2.includes(p.facturaId)).reduce((s,p)=>s+p.monto,0);
   const sf=fc.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(sal>0?sal:0);},0);
   const filasHTML=filas.map((mv,i)=>{
     const tipo=mv.tipo==='factura'?'<span style="background:#fff3cd;color:#92600a;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700">FACTURA</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700">PAGO</span>';
@@ -1915,19 +1916,30 @@ function getInvoiceData() {
 const TIPOS_FINANCIEROS = ['I', 'F'];
 function esFinanciero(tipoKey) { return TIPOS_FINANCIEROS.includes(tipoKey); }
 
-function abrirNuevoDocFinanciero() {
+function abrirNuevoDocComplementario() {
   populateInvoiceModal();
-  // Preseleccionar Invoice
-  document.getElementById('inv_tipo').value = 'I';
+  document.getElementById('modalInvoiceTitle').innerHTML = 'NUEVO <span>DOCUMENTO</span>';
+
+  // Eliminar opciones financieras del selector (Safari no soporta display:none en option)
+  const sel = document.getElementById('inv_tipo');
+  ['I','F'].forEach(val => {
+    const opt = sel.querySelector(`option[value="${val}"]`);
+    if (opt) opt.remove();
+  });
+  // Eliminar el optgroup de financieros
+  const optgroups = sel.querySelectorAll('optgroup');
+  if (optgroups[0]) optgroups[0].remove();
+
+  sel.value = 'O';
   onChangeTipoDoc();
   document.getElementById('modalInvoice').classList.add('open');
   document.querySelectorAll('#modalInvoice input[type=date]').forEach(i => { if(!i.value) i.value = new Date().toISOString().split('T')[0]; });
 }
 
-function abrirNuevoDocComplementario() {
+function abrirNuevoDocFinanciero() {
   populateInvoiceModal();
-  // Preseleccionar Orden de Entrega
-  document.getElementById('inv_tipo').value = 'O';
+  document.getElementById('modalInvoiceTitle').innerHTML = 'NUEVA <span>FACTURA / INVOICE</span>';
+  document.getElementById('inv_tipo').value = 'I';
   onChangeTipoDoc();
   document.getElementById('modalInvoice').classList.add('open');
   document.querySelectorAll('#modalInvoice input[type=date]').forEach(i => { if(!i.value) i.value = new Date().toISOString().split('T')[0]; });
@@ -3144,131 +3156,6 @@ function mostrarRecordatorioBackup(mensaje) {
     </div>`;
   document.body.appendChild(div);
 }
-
-// ═══════════════════════════════════════════════════
-// SEED DAL MIAMI v2 — datos del informe PDF 08/04/2026
-// Vincula pagos por facturaId correctamente
-// ═══════════════════════════════════════════════════
-function seedDALMiami() {
-  const PREFIX = 'dalmiami_';
-  const KEY    = 'dal';
-
-  // ── 1. Empresa: actualizar sin sobrescribir logo/colores ──
-  const todas = getTodasEmpresas();
-  const prev  = todas[KEY] || {};
-  todas[KEY]  = Object.assign({}, prev, {
-    key: KEY, nombre: 'DAL MIAMI EXPORT LLC',
-    sub: 'Export LLC — Libro de Asiento',
-    ein: 'EIN: 93-1412443', dbPrefix: PREFIX,
-    direccion: '3901 SW 78th CT Miami FL-33155',
-    email: 'dalmiami9@gmail.com', tel: '+1 786-839-1403',
-    gerente: 'Diego Hernández', cargoGerente: 'Gerente Financiero',
-    presidente: 'Alejandro De Lara',
-    colorPrimary:   prev.colorPrimary   || '#E8202A',
-    colorSecondary: prev.colorSecondary || '#1A3CCC',
-    colorAccent:    prev.colorAccent    || '#22C55E',
-    logo: prev.logo || null,
-  });
-  saveTodasEmpresas(todas);
-
-  // ── 2. Clientes ──
-  let cls = JSON.parse(localStorage.getItem(PREFIX+'clientes')||'[]');
-  const upsertC = (nombre, extra={}) => {
-    let c = cls.find(x => x.nombre.toLowerCase()===nombre.toLowerCase());
-    if (!c) { c = {id:uid(), nombre, pais:'Cuba', ...extra}; cls.push(c); }
-    else Object.assign(c, extra);
-    return c.id;
-  };
-  const cLaCatedral  = upsertC('La Catedral SURL',   {cif:'50004348171'});
-  const cCEDA        = upsertC('CEDA SURL',           {});
-  const cMERCY       = upsertC('MERCY SURL',          {});
-  const cSantaBarbara= upsertC('Santa Barbara SURL',  {});
-  localStorage.setItem(PREFIX+'clientes', JSON.stringify(cls));
-
-  // ── 3. Mercancías ──
-  let mercs = JSON.parse(localStorage.getItem(PREFIX+'mercancias')||'[]');
-  const upsertM = (nombre, unidad, descripcion) => {
-    let m = mercs.find(x => x.nombre.toLowerCase()===nombre.toLowerCase());
-    if (!m) { m = {id:uid(), nombre, unidad, categoria:'Pollo', descripcion}; mercs.push(m); }
-    return m.id;
-  };
-  const mPollo    = upsertM('Frozen 4x10 Lb Poly-Bagged',      'Caja', 'Pollo congelado 4x10 Lb en bolsa');
-  const mCerdo    = upsertM('Frozen Pork Boneless Loin',        'KG',   'Lomo de cerdo deshuesado congelado');
-  const mSanderson= upsertM('Sanderson Farms Frozen Half Bird', 'Caja', 'Medio pollo Sanderson Farms congelado');
-  localStorage.setItem(PREFIX+'mercancias', JSON.stringify(mercs));
-
-  // ── 4. Facturas + Pagos (upsert por número, vinculados correctamente) ──
-  // Formato: [fecha, numero, clienteId, mercanciaId, deuda, cobrado]
-  // El "cobrado" del PDF es el total recibido — si supera la deuda es saldo a favor
-  const ops = [
-    ['2026-01-12','2601', cLaCatedral,   mPollo,     18627.90, 19467.30],
-    ['2026-01-12','2602', cCEDA,         mPollo,     18627.90, 18627.90],
-    ['2026-01-12','2603', cMERCY,        mPollo,     18627.90, 20000.00],
-    ['2026-01-12','2604', cSantaBarbara, mPollo,     18627.90, 18627.90],
-    ['2026-02-15','2605', cLaCatedral,   mCerdo,     33176.00, 28275.16],
-    ['2026-02-15','2606', cCEDA,         mCerdo,     33168.00, 20000.00],
-    ['2026-02-15','2607', cMERCY,        mCerdo,     33172.00, 24974.50],
-    ['2026-04-08','2608', cLaCatedral,   mSanderson, 12372.75,     0.00],
-    ['2026-04-08','2609', cCEDA,         mSanderson, 12372.75,     0.00],
-    ['2026-04-08','2610', cMERCY,        mSanderson, 12351.60,     0.00],
-  ];
-
-  let facts = JSON.parse(localStorage.getItem(PREFIX+'facturas')||'[]');
-  let pagos = JSON.parse(localStorage.getItem(PREFIX+'pagos')||'[]');
-
-  ops.forEach(([fecha, numero, clienteId, mercanciaId, deuda, cobrado]) => {
-    // Upsert factura
-    let f = facts.find(x => x.numero === numero);
-    if (!f) {
-      f = {id: uid(), fecha, numero, clienteId, mercanciaId, deuda, arrastre: 0};
-      facts.push(f);
-    } else {
-      // Actualizar datos sin cambiar el id
-      Object.assign(f, {fecha, clienteId, mercanciaId, deuda, arrastre: 0});
-    }
-
-    // Si hay cobro, upsert pago vinculado por facturaId
-    if (cobrado > 0) {
-      // El monto que aplica a esta factura es mín(cobrado, deuda)
-      const montoFactura = Math.min(cobrado, deuda);
-      // El excedente (cobrado > deuda) va como anticipo/saldo a favor
-      const excedente = Math.max(0, cobrado - deuda);
-
-      // Upsert pago principal
-      let p = pagos.find(x => x.facturaId === f.id && x.notas && x.notas.includes('PDF'));
-      if (!p) {
-        p = {id: uid(), fecha, facturaId: f.id, monto: montoFactura, notas: 'Importado desde informe PDF'};
-        pagos.push(p);
-      } else {
-        Object.assign(p, {fecha, monto: montoFactura});
-      }
-
-      // Si hubo excedente, guardar como anticipo vinculado al cliente
-      if (excedente > 0.01) {
-        let ants = JSON.parse(localStorage.getItem(PREFIX+'anticipos')||'[]');
-        const yaExiste = ants.find(a => a.origen && a.origen.includes(numero));
-        if (!yaExiste) {
-          ants.push({id: uid(), fecha, clienteId, monto: excedente,
-            origen: `Excedente factura ${numero}`, aplicado: false});
-          localStorage.setItem(PREFIX+'anticipos', JSON.stringify(ants));
-        }
-      }
-    }
-  });
-
-  localStorage.setItem(PREFIX+'facturas', JSON.stringify(facts));
-  localStorage.setItem(PREFIX+'pagos',    JSON.stringify(pagos));
-  console.log('✅ Seed DAL Miami v2 completado — 4 clientes, 3 productos, 10 facturas, 7 cobros');
-}
-
-// Seed corre solo una vez — flag v2 controla esto
-if (!localStorage.getItem('sifa_seed_dalmiami_v2')) {
-  setTimeout(() => {
-    seedDALMiami();
-    localStorage.setItem('sifa_seed_dalmiami_v2', '1');
-  }, 300);
-}
-
 
 
 updateDate();
