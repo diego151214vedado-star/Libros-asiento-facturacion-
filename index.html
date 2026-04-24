@@ -811,7 +811,7 @@ if ('serviceWorker' in navigator) {
     <div class="form-row">
       <div class="form-group"><label>Fecha *</label><input type="date" id="inv_fecha"></div>
       <div class="form-group"><label>Moneda</label>
-        <select id="inv_moneda"><option value="USD">USD — Dólar</option><option value="EUR">EUR — Euro</option><option value="CUP">CUP — Peso Cubano</option><option value="MLC">MLC — Moneda Libremente Convertible</option></select>
+        <select id="inv_moneda" onchange="calcTotales();[1,2,3,4].forEach(calcLinea)"><option value="USD">USD — Dólar</option><option value="EUR">EUR — Euro</option><option value="CUP">CUP — Peso Cubano</option><option value="MLC">MLC — Moneda Libremente Convertible</option></select>
       </div>
     </div>
 
@@ -1892,7 +1892,11 @@ function onSelectProd(i) {
 function calcLinea(i) {
   const q = parseFloat(document.getElementById('inv_qty_'   + i).value) || 0;
   const p = parseFloat(document.getElementById('inv_price_' + i).value) || 0;
-  document.getElementById('inv_imp_' + i).textContent = q * p > 0 ? fmtUSD(q * p) : '—';
+  const moneda = document.getElementById('inv_moneda').value || 'USD';
+  const importe = q * p;
+  document.getElementById('inv_imp_' + i).textContent = importe > 0
+    ? '$' + importe.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' ' + moneda
+    : '—';
   calcTotales();
 }
 
@@ -1905,7 +1909,9 @@ function calcTotales() {
   const flete  = parseFloat(document.getElementById('inv_flete').value)  || 0;
   const seguro = parseFloat(document.getElementById('inv_seguro').value) || 0;
   const total  = sub + flete + seguro;
-  document.getElementById('inv_total_display').textContent = fmtUSD(total);
+  const moneda = document.getElementById('inv_moneda').value || 'USD';
+  document.getElementById('inv_total_display').textContent =
+    '$' + total.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' ' + moneda;
   return { subtotal: sub, flete, seguro, total };
 }
 
@@ -2189,6 +2195,54 @@ function fmtInvDate(d) {
   return day + ' ' + mes[parseInt(m) - 1] + ' ' + y;
 }
 
+function numeroALetras(numero, moneda) {
+  const unidades = ['','un','dos','tres','cuatro','cinco','seis','siete','ocho','nueve',
+    'diez','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve'];
+  const decenas = ['','diez','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+  const centenas = ['','ciento','doscientos','trescientos','cuatrocientos','quinientos',
+    'seiscientos','setecientos','ochocientos','novecientos'];
+
+  function convertir(n) {
+    if (n === 0) return 'cero';
+    if (n < 0) return 'menos ' + convertir(-n);
+    if (n < 20) return unidades[n];
+    if (n < 100) {
+      const d = Math.floor(n/10), u = n%10;
+      if (d === 2 && u > 0) return 'veinti' + unidades[u];
+      return decenas[d] + (u > 0 ? ' y ' + unidades[u] : '');
+    }
+    if (n === 100) return 'cien';
+    if (n < 1000) {
+      const c = Math.floor(n/100), r = n%100;
+      return centenas[c] + (r > 0 ? ' ' + convertir(r) : '');
+    }
+    if (n < 2000) return 'mil' + (n%1000 > 0 ? ' ' + convertir(n%1000) : '');
+    if (n < 1000000) {
+      const m = Math.floor(n/1000), r = n%1000;
+      return convertir(m) + ' mil' + (r > 0 ? ' ' + convertir(r) : '');
+    }
+    if (n < 2000000) return 'un millón' + (n%1000000 > 0 ? ' ' + convertir(n%1000000) : '');
+    const m = Math.floor(n/1000000), r = n%1000000;
+    return convertir(m) + ' millones' + (r > 0 ? ' ' + convertir(r) : '');
+  }
+
+  const entero = Math.floor(Math.abs(numero));
+  const cents  = Math.round((Math.abs(numero) - entero) * 100);
+
+  const monedas = {
+    'USD': ['dólar','dólares'],
+    'EUR': ['euro','euros'],
+    'CUP': ['peso cubano','pesos cubanos'],
+    'MLC': ['peso convertible','pesos convertibles'],
+  };
+  const [sing, plur] = monedas[moneda] || ['unidad','unidades'];
+  const monedaStr = entero === 1 ? sing : plur;
+  const letras = convertir(entero).toUpperCase();
+  const centsStr = String(cents).padStart(2,'0');
+
+  return `Son: ${letras} ${monedaStr.toUpperCase()} con ${centsStr}/100`;
+}
+
 function abrirInvoicePDF(data) {
   const c   = data.cliente || clientes.find(x => x.id === data.clienteId);
   const emp = data.emisora || empresaActual || {};
@@ -2236,6 +2290,9 @@ function abrirInvoicePDF(data) {
 
   const notasBlock = data.notas ? `<div style="border-left:3px solid ${pc};padding:8px 12px;margin-bottom:14px;font-size:11px;color:#444;background:#fafafa">${data.notas}</div>` : '';
 
+  // Total en letras
+  const totalLetrasBlock = `<div style="border:1px solid #ccc;border-radius:4px;padding:10px 14px;margin:14px 0;background:#f9f9f9;font-size:11px;font-style:italic;color:#333"><strong>${numeroALetras(data.total, data.moneda)}</strong></div>`;
+
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>${data.titulo} ${data.numero}</title>
 <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1a1a1a;background:#fff;padding:24px;font-size:12px}@media print{body{padding:10px}@page{margin:1cm;size:A4}}</style>
@@ -2273,6 +2330,7 @@ ${partesHTML}
 </table>
 
 ${logBlock}
+${totalLetrasBlock}
 ${notasBlock}
 
 <!-- PIE DE FIRMA TRIPLE -->
