@@ -691,7 +691,7 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- MODAL MERCANCÍA -->
-<div class="modal-overlay" id="modalMercancia">
+<div class="modal-overlay" id="modalMercancia" style="z-index:400">
   <div class="modal">
     <div class="modal-title" id="modalMercanciaTitle">NUEVO <span>PRODUCTO</span></div>
     <input type="hidden" id="mc_id">
@@ -1440,8 +1440,36 @@ function saveMercancia() {
   const editId=document.getElementById('mc_id').value;
   const data={nombre,codigo:document.getElementById('mc_codigo').value.trim(),unidad:document.getElementById('mc_unidad').value,precio:parseFloat(document.getElementById('mc_precio').value)||0,categoria:document.getElementById('mc_categoria').value,descripcion:document.getElementById('mc_descripcion').value.trim()};
   if(editId){const i=mercancias.findIndex(m=>m.id===editId);if(i!==-1)mercancias[i]={...mercancias[i],...data};toast('Producto actualizado');}
-  else{mercancias.push({id:uid(),...data});toast('Producto guardado');}
+  else{data.id=uid();mercancias.push(data);toast('Producto guardado');}
   save();closeModal('modalMercancia');renderMercancias();updateBadges();
+
+  // Si venía desde el invoice, seleccionar el producto creado en la línea pendiente
+  if (window._invLineaPendiente && !editId) {
+    const linea = window._invLineaPendiente;
+    window._invLineaPendiente = null;
+    // Actualizar selectores del invoice
+    [1,2,3,4].forEach(n => {
+      const sel = document.getElementById('inv_prod_' + n);
+      if (!sel) return;
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">— Producto —</option>' +
+        mercancias.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('') +
+        '<option value="__nuevo__" style="font-weight:700">＋ Crear nuevo producto...</option>';
+      sel.value = cur;
+    });
+    // Seleccionar el nuevo en la línea correcta
+    const sel = document.getElementById('inv_prod_' + linea);
+    if (sel) {
+      sel.value = data.id;
+      document.getElementById('inv_um_'  + linea).value = data.unidad || 'KG';
+      document.getElementById('inv_cod_' + linea).value = data.codigo || '';
+      if (data.precio) {
+        document.getElementById('inv_price_' + linea).value = data.precio;
+        calcLinea(linea);
+      }
+    }
+    toast('Producto "' + nombre + '" creado y seleccionado ✅');
+  }
 }
 function editMercancia(id) {
   const m=mercancias.find(x=>x.id===id); if(!m) return;
@@ -1846,7 +1874,8 @@ function populateInvoiceModal() {
     clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
   [1,2,3,4].forEach(i => {
     document.getElementById('inv_prod_' + i).innerHTML = '<option value="">— Producto —</option>' +
-      mercancias.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
+      mercancias.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('') +
+      '<option value="__nuevo__" style="color:var(--green);font-weight:700">＋ Crear nuevo producto...</option>';
     document.getElementById('inv_qty_'   + i).value = '';
     document.getElementById('inv_price_' + i).value = '';
     document.getElementById('inv_um_'    + i).value = '';
@@ -1882,8 +1911,24 @@ function onSelectInvoiceCliente() {
 }
 
 function onSelectProd(i) {
-  const id = document.getElementById('inv_prod_' + i).value; if (!id) return;
-  const m  = mercancias.find(x => x.id === id); if (!m) return;
+  const id = document.getElementById('inv_prod_' + i).value;
+  if (id === '__nuevo__') {
+    document.getElementById('inv_prod_' + i).value = '';
+    window._invLineaPendiente = i;
+    // Usar el modal original de mercancía (z-index 400 ya configurado)
+    document.getElementById('mc_id').value = '';
+    ['mc_nombre','mc_codigo','mc_precio','mc_descripcion'].forEach(fid => {
+      document.getElementById(fid).value = '';
+    });
+    document.getElementById('mc_unidad').value    = 'KG';
+    document.getElementById('mc_categoria').value = 'Producto';
+    document.getElementById('modalMercanciaTitle').innerHTML = 'NUEVO <span>PRODUCTO</span>';
+    document.getElementById('modalMercancia').classList.add('open');
+    setTimeout(() => document.getElementById('mc_nombre').focus(), 100);
+    return;
+  }
+  if (!id) return;
+  const m = mercancias.find(x => x.id === id); if (!m) return;
   document.getElementById('inv_um_'  + i).value = m.unidad || 'KG';
   document.getElementById('inv_cod_' + i).value = m.codigo || '';
   if (m.precio) { document.getElementById('inv_price_' + i).value = m.precio; calcLinea(i); }
