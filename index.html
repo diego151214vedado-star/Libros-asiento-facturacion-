@@ -572,8 +572,8 @@ if ('serviceWorker' in navigator) {
         <button id="btnActualizarClaude" class="btn btn-secondary btn-sm" onclick="abrirProtocoloClaude()" style="display:none;background:linear-gradient(135deg,#6366F1,#0EA5E9);color:white;border:none" title="Actualizar gastos con Claude">🤖 Actualizar con Claude</button>
         <button class="btn btn-secondary btn-sm" onclick="abrirRecuperacion()" title="Recuperar datos de versiones anteriores">🔄 Recuperar datos</button>
         <button class="btn btn-secondary btn-sm" onclick="exportarBackup()" title="Descargar copia de seguridad">💾 Backup</button>
-        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('inputImportBackup').click()" title="Restaurar desde copia de seguridad">📂 Restaurar</button>
-        <input type="file" id="inputImportBackup" accept=".json" style="display:none">
+        <label for="inputImportBackup" class="btn btn-secondary btn-sm" style="cursor:pointer">📂 Restaurar</label>
+        <input type="file" id="inputImportBackup" accept=".json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
         <button class="btn btn-primary" id="btnCompartirDash" onclick="compartirDashboard()">⬆️ Exportar PDF</button>
       </div>
     </div>
