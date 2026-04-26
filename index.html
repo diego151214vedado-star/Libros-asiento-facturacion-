@@ -4147,46 +4147,86 @@ function importarBackup(input) {
       if (!backup.sistema) { toast('Archivo de backup no válido', 'error'); return; }
 
       const fechaStr = backup.fecha ? new Date(backup.fecha).toLocaleDateString('es') : 'fecha desconocida';
-      if (!confirm(`¿Restaurar backup del ${fechaStr}?\n\n⚠️ ATENCIÓN: Esto REEMPLAZARÁ completamente los datos actuales con los del backup.\n\n¿Confirmas?`)) return;
+      const nEmpresas = backup.sistema.sys_empresas_v2 ? Object.keys(backup.sistema.sys_empresas_v2).length : '?';
+      const nClaves = Object.keys(backup.sistema).length;
 
-      // Borrar primero TODOS los datos actuales de todas las empresas conocidas
-      const todas = getTodasEmpresas();
-      Object.values(todas).forEach(emp => {
-        const p = emp.dbPrefix;
-        ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos','gastos'].forEach(t => {
-          localStorage.removeItem(p + t);
-        });
-      });
+      // Modal de confirmación propio — no depende de confirm() del navegador
+      const div = document.createElement('div');
+      div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)';
+      div.innerHTML = `
+        <div style="background:#12121A;border:1px solid #2A2A38;border-radius:20px;padding:32px;max-width:440px;width:100%">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:8px;color:#EEEEF2">RESTAURAR <span style="color:#6366F1">BACKUP</span></div>
+          <div style="font-size:13px;color:#8888A0;margin-bottom:20px;line-height:1.7">
+            Backup del <strong style="color:#EEEEF2">${fechaStr}</strong><br>
+            ${nEmpresas} empresa(s) · ${nClaves} colecciones de datos
+          </div>
+          <div style="background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);border-radius:10px;padding:12px 16px;margin-bottom:24px;font-size:12px;color:#FF6B6B;line-height:1.7">
+            ⚠️ Esto <strong>reemplazará</strong> todos los datos actuales con los del backup. Esta acción no se puede deshacer.
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button id="btnCancelRestore" style="background:#1A1A24;border:1px solid #2A2A38;color:#8888A0;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button>
+            <button id="btnConfirmRestore" style="background:#6366F1;border:none;color:white;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Restaurar ahora</button>
+          </div>
+        </div>`;
+      document.body.appendChild(div);
 
-      // También borrar del backup cualquier prefijo que aparezca
-      Object.keys(backup.sistema).forEach(k => {
-        const match = k.match(/^(.+?)(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos|gastos)$/);
-        if (match) localStorage.removeItem(k);
-      });
+      document.getElementById('btnCancelRestore').onclick = () => {
+        document.body.removeChild(div);
+        input.value = '';
+      };
 
-      // Restaurar todo del backup directamente
-      let restaurados = 0;
-      Object.entries(backup.sistema).forEach(([k, v]) => {
-        localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
-        restaurados++;
-      });
+      document.getElementById('btnConfirmRestore').onclick = () => {
+        document.body.removeChild(div);
 
-      // Recargar datos
-      initEmpresas();
-      const savedKey = localStorage.getItem('dal_empresa_actual');
-      if (savedKey && getEmpresa(savedKey)) {
-        cargarDatosEmpresa(getEmpresa(savedKey));
-        applyEmpresaTheme(getEmpresa(savedKey));
-      }
-      updateBadges();
-      renderDashboard();
+        try {
+          // Borrar datos actuales
+          const todas = getTodasEmpresas();
+          Object.values(todas).forEach(emp => {
+            const p = emp.dbPrefix;
+            ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos','gastos'].forEach(t => {
+              localStorage.removeItem(p + t);
+            });
+          });
 
-      input.value = '';
-      toast(`✅ Restauración completa — datos reemplazados correctamente`);
+          // Borrar claves del backup que puedan existir
+          Object.keys(backup.sistema).forEach(k => {
+            const match = k.match(/^(.+?)(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos|gastos)$/);
+            if (match) localStorage.removeItem(k);
+          });
+
+          // Restaurar todo
+          let restaurados = 0;
+          Object.entries(backup.sistema).forEach(([k, v]) => {
+            try {
+              localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+              restaurados++;
+            } catch(e) { console.warn('No se pudo restaurar clave:', k, e); }
+          });
+
+          // Recargar
+          initEmpresas();
+          const savedKey = localStorage.getItem('dal_empresa_actual');
+          if (savedKey && getEmpresa(savedKey)) {
+            cargarDatosEmpresa(getEmpresa(savedKey));
+            applyEmpresaTheme(getEmpresa(savedKey));
+            actualizarBtnClaude();
+          }
+          updateBadges();
+          renderDashboard();
+          renderEmpresas();
+          input.value = '';
+          toast(`✅ ${restaurados} colecciones restauradas correctamente`);
+
+        } catch(err) {
+          console.error(err);
+          toast('Error durante la restauración: ' + err.message, 'error');
+        }
+      };
 
     } catch(err) {
       console.error(err);
       toast('Error al leer el archivo de backup', 'error');
+      input.value = '';
     }
   };
   reader.readAsText(file);
