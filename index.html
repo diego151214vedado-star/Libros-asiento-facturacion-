@@ -569,6 +569,7 @@ if ('serviceWorker' in navigator) {
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button id="btnEditarEmpresa" class="btn btn-secondary btn-sm" onclick="editEmpresaActiva()" style="display:none">✏️ Editar empresa</button>
+        <button id="btnActualizarClaude" class="btn btn-secondary btn-sm" onclick="abrirProtocoloClaude()" style="display:none;background:linear-gradient(135deg,#6366F1,#0EA5E9);color:white;border:none" title="Actualizar gastos con Claude">🤖 Actualizar con Claude</button>
         <button class="btn btn-secondary btn-sm" onclick="abrirRecuperacion()" title="Recuperar datos de versiones anteriores">🔄 Recuperar datos</button>
         <button class="btn btn-secondary btn-sm" onclick="exportarBackup()" title="Descargar copia de seguridad">💾 Backup</button>
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('inputImportBackup').click()" title="Restaurar desde copia de seguridad">📂 Restaurar</button>
@@ -940,6 +941,52 @@ if ('serviceWorker' in navigator) {
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('modalPago')">Cancelar</button>
       <button class="btn btn-blue" id="btnGuardarPago" onclick="savePago()">Registrar Pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROTOCOLO CLAUDE — Solo DAL Miami -->
+<div class="modal-overlay" id="modalClaude">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-title">ACTUALIZAR CON <span>CLAUDE</span></div>
+
+    <div style="background:linear-gradient(135deg,#6366F115,#0EA5E915);border:1px solid #6366F133;border-radius:12px;padding:16px 18px;margin-bottom:20px">
+      <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Meses ya cargados en SiFa</div>
+      <div id="claudeMesesCargados" style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px"></div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label>Próximo mes a cargar</label>
+      <select id="claudeMesTarget" onchange="actualizarMensajeClaude()" style="font-weight:700">
+        <option value="Abril 2026">Abril 2026</option>
+        <option value="Mayo 2026">Mayo 2026</option>
+        <option value="Junio 2026">Junio 2026</option>
+        <option value="Julio 2026">Julio 2026</option>
+        <option value="Agosto 2026">Agosto 2026</option>
+        <option value="Septiembre 2026">Septiembre 2026</option>
+        <option value="Octubre 2026">Octubre 2026</option>
+        <option value="Noviembre 2026">Noviembre 2026</option>
+        <option value="Diciembre 2026">Diciembre 2026</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <label>Mensaje para Claude — listo para copiar y pegar</label>
+      <div id="claudeMensaje" style="background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-family:'DM Mono',monospace;font-size:11px;color:var(--green);line-height:1.9;white-space:pre-wrap;user-select:all;cursor:text"></div>
+    </div>
+
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:11px;color:var(--text2);line-height:1.8">
+      <strong style="color:var(--orange)">Pasos:</strong><br>
+      1. Toca <strong>"Copiar mensaje"</strong> abajo<br>
+      2. Abre <strong>claude.ai</strong> → busca este chat <em>"SiFa / DAL Miami"</em><br>
+      3. Pega el mensaje + adjunta el PDF del estado de cuenta Chase<br>
+      4. Claude te entrega el HTML actualizado con los nuevos gastos
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalClaude')">Cerrar</button>
+      <button class="btn btn-secondary" onclick="window.open('https://claude.ai','_blank')" style="gap:6px">🌐 Abrir Claude.ai</button>
+      <button class="btn btn-primary" onclick="copiarMensajeClaude()" id="btnCopiarClaude">📋 Copiar mensaje</button>
     </div>
   </div>
 </div>
@@ -1449,7 +1496,7 @@ function seleccionarEmpresa(key) {
   applyEmpresaTheme(emp);
   updateBadges();
   showSection('empresas'); // se queda en empresas, activa resaltada
-}
+  actualizarBtnClaude();
 
 function seleccionarEmpresaDirecta(key) {
   const emp=getEmpresa(key); if(!emp) return;
@@ -1459,6 +1506,7 @@ function seleccionarEmpresaDirecta(key) {
   updateBadges();
   showSection('dashboard');
   toast('Empresa activa: '+emp.nombre);
+  actualizarBtnClaude();
 }
 
 // ═══ TEMA ═══
@@ -3820,6 +3868,116 @@ function exportarPnlPDF() {
   setTimeout(()=>URL.revokeObjectURL(url),20000);
 }
 
+// ═══════════════════════════════════════════════
+// PROTOCOLO CLAUDE — Actualización mensual DAL Miami
+// ═══════════════════════════════════════════════
+
+function abrirProtocoloClaude() {
+  if (!empresaActual || empresaActual.dbPrefix !== 'dalmiami_') return;
+
+  // Detectar meses ya cargados
+  const mesesCargados = new Set(
+    gastos.filter(g => g.fecha).map(g => {
+      const [y, m] = g.fecha.split('-');
+      return `${y}-${m}`;
+    })
+  );
+
+  const MESES_NOMBRE = {
+    '01':'Enero','02':'Febrero','03':'Marzo','04':'Abril',
+    '05':'Mayo','06':'Junio','07':'Julio','08':'Agosto',
+    '09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'
+  };
+
+  // Render badges de meses cargados
+  const badgesDiv = document.getElementById('claudeMesesCargados');
+  if (badgesDiv) {
+    if (!mesesCargados.size) {
+      badgesDiv.innerHTML = `<span style="color:var(--text2);font-size:12px">Ninguno aún</span>`;
+    } else {
+      badgesDiv.innerHTML = [...mesesCargados].sort().map(ym => {
+        const [y, m] = ym.split('-');
+        return `<span style="background:rgba(34,197,94,.15);color:var(--green);padding:4px 10px;border-radius:20px;font-weight:700">✅ ${MESES_NOMBRE[m]} ${y}</span>`;
+      }).join('');
+    }
+  }
+
+  // Auto-seleccionar el mes siguiente al último cargado
+  const sel = document.getElementById('claudeMesTarget');
+  if (sel && mesesCargados.size) {
+    const ultimo = [...mesesCargados].sort().pop(); // '2026-03'
+    const [y, m] = ultimo.split('-');
+    const sigMes = parseInt(m) + 1;
+    if (sigMes <= 12) {
+      const sigLabel = `${MESES_NOMBRE[String(sigMes).padStart(2,'0')]} ${y}`;
+      for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === sigLabel) { sel.selectedIndex = i; break; }
+      }
+    }
+  }
+
+  actualizarMensajeClaude();
+  document.getElementById('modalClaude').classList.add('open');
+}
+
+function actualizarMensajeClaude() {
+  const mes = document.getElementById('claudeMesTarget') ? document.getElementById('claudeMesTarget').value : '';
+  const mesesCargados = new Set(
+    gastos.filter(g => g.fecha).map(g => { const [y,m]=g.fecha.split('-'); return `${y}-${m}`; })
+  );
+  const MESES_NOMBRE = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
+  const listaMeses = [...mesesCargados].sort().map(ym=>{const[y,m]=ym.split('-');return `${MESES_NOMBRE[m]} ${y}`;}).join(', ') || 'Ninguno';
+
+  const mensaje =
+`Actualización SiFa — Estado de cuenta ${mes}
+
+Empresa: DAL Miami Export LLC
+EIN: 93-1412443
+Cuenta Chase: ****9521 (Business Complete Checking)
+Contador: Dailin Pages / RO Miami
+Estructura fiscal: Partnership · Form 1065
+Socios: Alejandro De Lara (99%) / Pedro Hernández Márquez (1%)
+
+Meses ya cargados en SiFa: ${listaMeses}
+
+Por favor:
+1. Extrae todos los EGRESOS del estado de cuenta adjunto
+2. Clasifícalos con las categorías de SiFa (Logística, Nómina, Bancario, Servicios, Impuestos, Operacional, Otro)
+3. Marca con ⚠️ los gastos que necesiten revisión del CPA
+4. Añádelos al seed de Enero-Marzo ya existente SIN duplicar
+5. Entrega el index.html actualizado
+
+Adjunto: Estado de cuenta Chase ${mes} (PDF)
+Adjunto: index.html actual de SiFa`;
+
+  const msgDiv = document.getElementById('claudeMensaje');
+  if (msgDiv) msgDiv.textContent = mensaje;
+}
+
+function copiarMensajeClaude() {
+  const msgDiv = document.getElementById('claudeMensaje');
+  if (!msgDiv) return;
+  navigator.clipboard.writeText(msgDiv.textContent).then(() => {
+    const btn = document.getElementById('btnCopiarClaude');
+    if (btn) { btn.textContent = '✅ Copiado'; setTimeout(()=>{ btn.textContent='📋 Copiar mensaje'; },2500); }
+    toast('Mensaje copiado — pégalo en el chat de Claude');
+  }).catch(() => {
+    // Fallback selección manual
+    const range = document.createRange();
+    range.selectNodeContents(msgDiv);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    toast('Selecciona el texto y copia manualmente');
+  });
+}
+
+// Mostrar/ocultar botón Claude según empresa activa
+function actualizarBtnClaude() {
+  const btn = document.getElementById('btnActualizarClaude');
+  if (!btn) return;
+  btn.style.display = (empresaActual && empresaActual.dbPrefix === 'dalmiami_') ? 'inline-flex' : 'none';
+}
+
 // ═══ BADGES ═══
 function updateBadges() {
   document.getElementById('badge-clientes').textContent=clientes.length;
@@ -4100,7 +4258,8 @@ if (_savedKey && getEmpresa(_savedKey)) {
   cargarDatosEmpresa(getEmpresa(_savedKey));
   applyEmpresaTheme(getEmpresa(_savedKey));
   updateBadges();
-  renderEmpresas(); // re-render con la activa marcada
+  renderEmpresas();
+  actualizarBtnClaude();
 }
 
 // Recordatorio de backup
