@@ -471,6 +471,10 @@ if ('serviceWorker' in navigator) {
       <span class="nav-icon">💰</span><span class="nav-label">Cobros</span>
       <span class="badge" id="badge-pagos">0</span>
     </button>
+    <button class="nav-tab" onclick="showSection('gastos')" id="tab-gastos">
+      <span class="nav-icon">📤</span><span class="nav-label">Gastos</span>
+      <span class="badge" id="badge-gastos">0</span>
+    </button>
     <button class="nav-tab" onclick="showSection('invoices')" id="tab-invoices">
       <span class="nav-icon">📋</span><span class="nav-label">Facturas/Invoice</span>
       <span class="badge" id="badge-invoices">0</span>
@@ -481,6 +485,9 @@ if ('serviceWorker' in navigator) {
     </button>
 
     <div class="nav-section-label">Herramientas</div>
+    <button class="nav-tab" onclick="showSection('pnl')" id="tab-pnl">
+      <span class="nav-icon">📊</span><span class="nav-label">Estado de Resultados</span>
+    </button>
     <button class="nav-tab" onclick="showSection('calc')" id="tab-calc">
       <span class="nav-icon">🧮</span><span class="nav-label">Precios</span>
       <span class="badge" id="badge-calc">0</span>
@@ -518,12 +525,21 @@ if ('serviceWorker' in navigator) {
   <div class="section" id="section-empresas" style="padding:0;margin:0;max-width:100%;position:fixed;inset:0;overflow-y:auto;z-index:300;background:#0A0A0F;display:none">
 
     <!-- HERO PORTADA -->
-    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 32px;background:radial-gradient(ellipse 80% 60% at 50% -10%,#16163A 0%,#0A0A0F 70%)">
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 32px;background:radial-gradient(ellipse 90% 55% at 50% -5%,#1A1A3E 0%,#0D0D20 45%,#0A0A0F 100%)">
 
       <!-- Logo enorme -->
-      <div style="margin-bottom:40px;text-align:center;user-select:none">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:min(18vw,120px);letter-spacing:10px;line-height:1;color:#EEEEF2;opacity:.95">SiFa</div>
-        <div style="font-size:11px;letter-spacing:5px;text-transform:uppercase;color:#333348;margin-top:2px">Sistema Integral de Facturación y Asientos</div>
+      <div style="margin-bottom:44px;text-align:center;user-select:none;position:relative">
+        <!-- Glow tras el texto -->
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 60%,#6366F122 0%,transparent 70%);pointer-events:none"></div>
+        <!-- Wordmark con gradiente -->
+        <div style="position:relative;display:inline-block;line-height:1">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:min(18vw,118px);letter-spacing:14px;line-height:0.92;background:linear-gradient(135deg,#EEEEF2 0%,#A5B4FC 40%,#38BDF8 70%,#EEEEF2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 40px rgba(99,102,241,.25))">SiFa</div>
+          <!-- Línea decorativa bajo el texto -->
+          <div style="height:3px;background:linear-gradient(90deg,transparent,#6366F1,#0EA5E9,transparent);border-radius:2px;margin-top:6px;opacity:.8"></div>
+          <!-- Acento S/F en la esquina — pequeño detalle tipográfico -->
+          <div style="position:absolute;top:-8px;right:-18px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:#6366F1;opacity:.7;text-transform:uppercase">v2</div>
+        </div>
+        <div style="font-size:10px;letter-spacing:6px;text-transform:uppercase;color:#3A3A52;margin-top:14px;font-family:'DM Mono',monospace">Sistema · Facturación · Asientos</div>
       </div>
 
       <!-- Pregunta -->
@@ -620,6 +636,178 @@ if ('serviceWorker' in navigator) {
       <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Cliente</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr></thead><tbody id="pagosTable"></tbody></table>
     </div>
   </div>
+
+  <!-- GASTOS -->
+  <div class="section" id="section-gastos">
+    <div class="page-header">
+      <div>
+        <div class="page-title">REGISTRO DE <span>GASTOS</span></div>
+        <div class="page-sub">Egresos y pagos operacionales de la empresa activa</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <select id="filtroMesGasto" onchange="renderGastos()" style="padding:9px 14px;font-size:13px;width:auto">
+          <option value="">Todos los meses</option>
+          <option value="01">Enero</option><option value="02">Febrero</option>
+          <option value="03">Marzo</option><option value="04">Abril</option>
+          <option value="05">Mayo</option><option value="06">Junio</option>
+          <option value="07">Julio</option><option value="08">Agosto</option>
+          <option value="09">Septiembre</option><option value="10">Octubre</option>
+          <option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+        <select id="filtroCatGasto" onchange="renderGastos()" style="padding:9px 14px;font-size:13px;width:auto">
+          <option value="">Todas las categorías</option>
+          <option value="Operacional">⚙️ Operacional</option>
+          <option value="Nómina">👥 Nómina</option>
+          <option value="Logística">🚚 Logística</option>
+          <option value="Alquiler">🏠 Alquiler</option>
+          <option value="Servicios">💡 Servicios</option>
+          <option value="Impuestos">🏛️ Impuestos</option>
+          <option value="Bancario">🏦 Bancario</option>
+          <option value="Otro">📋 Otro</option>
+        </select>
+        <button class="btn btn-primary" onclick="openModal('modalGasto')">＋ Nuevo Gasto</button>
+      </div>
+    </div>
+    <!-- Stat cards de gastos -->
+    <div class="stats-row" id="gastosStatsRow"></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th>Fecha</th>
+          <th>Categoría</th>
+          <th>Concepto</th>
+          <th>Proveedor</th>
+          <th>Monto</th>
+          <th>Método</th>
+          <th>Notas</th>
+          <th>Acciones</th>
+        </tr></thead>
+        <tbody id="gastosTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ESTADO DE RESULTADOS / P&L -->
+  <div class="section" id="section-pnl">
+    <div class="page-header">
+      <div>
+        <div class="page-title">ESTADO DE <span>RESULTADOS</span></div>
+        <div class="page-sub" id="pnlSubtitle">Profit & Loss — Clasificación IRS · Schedule C compatible</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <select id="pnlAnio" onchange="renderPnl()" style="padding:9px 14px;font-size:13px;width:auto">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+        <select id="pnlMes" onchange="renderPnl()" style="padding:9px 14px;font-size:13px;width:auto">
+          <option value="">Año completo</option>
+          <option value="01">Enero</option><option value="02">Febrero</option>
+          <option value="03">Marzo</option><option value="04">Abril</option>
+          <option value="05">Mayo</option><option value="06">Junio</option>
+          <option value="07">Julio</option><option value="08">Agosto</option>
+          <option value="09">Septiembre</option><option value="10">Octubre</option>
+          <option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+        <button class="btn btn-primary" onclick="exportarPnlPDF()">📄 Exportar PDF</button>
+      </div>
+    </div>
+
+    <!-- Aviso IRS -->
+    <div id="pnlIrsNotice" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:20px;flex-shrink:0">⚠️</span>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7">
+        <strong style="color:var(--orange)">Nota Form 1065:</strong> DAL Miami Export LLC es una <strong>Partnership</strong> — presenta Form 1065 (no Schedule C). 
+        Los egresos de <em>Logística</em> se reportan como <strong>Cost of Goods Sold (L2)</strong>. 
+        Gastos marcados con ⚠️ requieren revisión con el CPA (Dailin Pages / RO Miami) antes de presentar — pueden ser personales o no deducibles.
+        <strong style="color:var(--orange)"> SiFa no reemplaza el criterio del contador.</strong>
+      </div>
+    </div>
+
+    <!-- KPIs superiores -->
+    <div class="stats-row" id="pnlKpis" style="margin-bottom:28px"></div>
+
+    <!-- Tabla P&L principal -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px" id="pnlGrid">
+
+      <!-- Columna INGRESOS -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--green)">INGRESOS</div>
+          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px">Gross Revenue</div>
+        </div>
+        <div id="pnlIngresos"></div>
+        <div id="pnlTotalIngresos" style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:rgba(34,197,94,.05)">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;color:var(--green)">TOTAL INGRESOS</span>
+          <span id="pnlTotalIngresosVal" class="mono" style="font-size:16px;font-weight:700;color:var(--green)">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Columna EGRESOS -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--pink)">EGRESOS</div>
+          <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px">Schedule C · IRS</div>
+        </div>
+        <div id="pnlEgresos"></div>
+        <div id="pnlTotalEgresos" style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:rgba(255,107,107,.05)">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;color:var(--pink)">TOTAL EGRESOS</span>
+          <span id="pnlTotalEgresosVal" class="mono" style="font-size:16px;font-weight:700;color:var(--pink)">$0.00</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Resultado neto — el número grande -->
+    <div id="pnlResultadoNeto" style="border-radius:16px;padding:28px 32px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border:2px solid var(--border)">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px" id="pnlNetoLabel">UTILIDAD NETA</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:1.5px" id="pnlNetoMargen">L22 · Ordinary Income/Loss · Form 1065 Partnership</div>
+      </div>
+      <div style="text-align:right">
+        <div id="pnlNetoVal" style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:2px;line-height:1">—</div>
+        <div id="pnlNetoSubtitle" style="font-size:12px;color:var(--text2);margin-top:4px">Margen neto: —</div>
+      </div>
+    </div>
+
+    <!-- Desglose mensual (tabla) -->
+    <div class="section-label">Desglose mensual</div>
+    <div class="table-wrapper" style="margin-bottom:24px">
+      <table>
+        <thead><tr>
+          <th>Mes</th>
+          <th style="text-align:right">Ingresos</th>
+          <th style="text-align:right">COGS</th>
+          <th style="text-align:right">Gastos Op.</th>
+          <th style="text-align:right">Total Egresos</th>
+          <th style="text-align:right">Resultado</th>
+          <th style="text-align:center">Margen</th>
+        </tr></thead>
+        <tbody id="pnlMensualTable"></tbody>
+      </table>
+    </div>
+
+    <!-- Nota protocolo Claude -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:20px">🤖</span>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--text)">PROTOCOLO DE ACTUALIZACIÓN MENSUAL CON <span style="color:var(--red)">CLAUDE</span></div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+        Este sistema fue construido y es mantenido con asistencia de <strong style="color:var(--text)">Claude (Anthropic)</strong>.<br>
+        Para actualizar los gastos cada mes, abre un chat nuevo en <strong style="color:var(--text)">claude.ai</strong> y escribe exactamente:<br>
+        <div style="background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:10px 0;font-family:'DM Mono',monospace;font-size:11px;color:var(--green);line-height:1.8">
+          "Actualización SiFa — estado de cuenta [MES] [AÑO]"<br>
+          → Adjunta el PDF del estado de cuenta Chase<br>
+          → Adjunta el archivo index.html de SiFa
+        </div>
+        Claude extraerá los egresos nuevos, los clasificará por categoría IRS, los añadirá al módulo de Gastos y entregará el HTML actualizado.<br>
+        <strong style="color:var(--orange)">No duplicará transacciones si ya existen en el archivo.</strong><br><br>
+        <span style="color:var(--text2);font-size:11px">Cuenta Chase · Business Complete Checking · Acc: ****9521 · DAL MIAMI EXPORT LLC · EIN: 93-1412443</span>
+      </div>
+    </div>
+
+  </div><!-- /section-pnl -->
 
   <!-- PRECIOS -->
   <div class="section" id="section-calc">
@@ -752,6 +940,52 @@ if ('serviceWorker' in navigator) {
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('modalPago')">Cancelar</button>
       <button class="btn btn-blue" id="btnGuardarPago" onclick="savePago()">Registrar Pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GASTO -->
+<div class="modal-overlay" id="modalGasto">
+  <div class="modal">
+    <div class="modal-title" id="modalGastoTitle">NUEVO <span>GASTO</span></div>
+    <input type="hidden" id="gasto_id">
+    <div class="form-row">
+      <div class="form-group"><label>Fecha *</label><input type="date" id="gasto_fecha"></div>
+      <div class="form-group">
+        <label>Categoría *</label>
+        <select id="gasto_categoria">
+          <option value="Operacional">⚙️ Operacional</option>
+          <option value="Nómina">👥 Nómina</option>
+          <option value="Logística">🚚 Logística</option>
+          <option value="Alquiler">🏠 Alquiler</option>
+          <option value="Servicios">💡 Servicios</option>
+          <option value="Impuestos">🏛️ Impuestos</option>
+          <option value="Bancario">🏦 Bancario</option>
+          <option value="Otro">📋 Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Concepto *</label><input type="text" id="gasto_concepto" placeholder="Ej: Pago de flete, Salario marzo, Renta almacén..."></div>
+    <div class="form-row">
+      <div class="form-group"><label>Monto (US$) *</label><input type="number" id="gasto_monto" placeholder="0.00" step="0.01" min="0"></div>
+      <div class="form-group">
+        <label>Método de pago</label>
+        <select id="gasto_metodo">
+          <option value="Transferencia">💳 Transferencia</option>
+          <option value="Efectivo">💵 Efectivo</option>
+          <option value="Cheque">📝 Cheque</option>
+          <option value="Zelle">📱 Zelle</option>
+          <option value="ACH">🏦 ACH</option>
+          <option value="Otro">📋 Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Proveedor / Beneficiario</label><input type="text" id="gasto_proveedor" placeholder="Ej: UPS, Empleado X, Landlord..."></div>
+    <div class="form-group"><label>Referencia / N° de operación</label><input type="text" id="gasto_referencia" placeholder="Ej: TRF-00123, CHK-456..."></div>
+    <div class="form-group"><label>Notas</label><textarea id="gasto_notas" rows="2" placeholder="Información adicional..."></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalGasto')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarGasto" onclick="saveGasto()">Registrar Gasto</button>
     </div>
   </div>
 </div>
@@ -1172,6 +1406,7 @@ function getEmpresa(key) { return getTodasEmpresas()[key] || null; }
 let empresaActual = null, _logoBase64 = null;
 let clientes=[], mercancias=[], facturas=[], pagos=[];
 let invoices=[], calculos=[], anticipios=[];
+let gastos=[];
 let concClienteId=null, excedentePendiente=null;
 
 // ═══ CARGAR DATOS AISLADOS POR EMPRESA ═══
@@ -1185,6 +1420,7 @@ function cargarDatosEmpresa(emp) {
   invoices   = [];
   calculos   = [];
   anticipios = [];
+  gastos     = [];
 
   empresaActual = emp;
   window._empresaPrefix = emp.dbPrefix;
@@ -1196,6 +1432,12 @@ function cargarDatosEmpresa(emp) {
   invoices   = JSON.parse(localStorage.getItem(p + 'invoices')   || '[]');
   calculos   = JSON.parse(localStorage.getItem(p + 'calculos')   || '[]');
   anticipios = JSON.parse(localStorage.getItem(p + 'anticipos')  || '[]');
+  gastos     = JSON.parse(localStorage.getItem(p + 'gastos')     || '[]');
+  // Seed de gastos bancarios si la empresa es DAL Miami y no hay gastos aún
+  if (emp.dbPrefix === 'dalmiami_' && gastos.length === 0) {
+    // Se ejecuta tras completar init
+    setTimeout(seedGastosDalMiami, 0);
+  }
 }
 
 // ═══ SELECCIONAR EMPRESA ═══
@@ -1252,6 +1494,10 @@ function saveAnticipos() {
   if (!_assertEmpresa()) return;
   localStorage.setItem(empresaActual.dbPrefix + 'anticipos', JSON.stringify(anticipios));
 }
+function saveGastosDB() {
+  if (!_assertEmpresa()) return;
+  localStorage.setItem(empresaActual.dbPrefix + 'gastos', JSON.stringify(gastos));
+}
 
 // ═══ UTILS ═══
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -1285,6 +1531,8 @@ const _SECTION_TITLES = {
   invoices:    'FACTURAS / <span>INVOICES</span>',
   documentos:  'DOCUMENTOS <span>COMPLEMENTARIOS</span>',
   calc:        'FORMACIÓN DE <span>PRECIOS</span>',
+  gastos:      'REGISTRO DE <span>GASTOS</span>',
+  pnl:         'ESTADO DE <span>RESULTADOS</span>',
   empresas:    'SELECCIÓN DE <span>EMPRESA</span>',
 };
 
@@ -1330,6 +1578,8 @@ function showSection(id) {
   if (id === 'invoices')    renderInvoices();
   if (id === 'documentos')  renderDocumentos();
   if (id === 'calc')        renderCalc();
+  if (id === 'gastos')      renderGastos();
+  if (id === 'pnl')         renderPnl();
 }
 
 
@@ -1343,6 +1593,7 @@ function openModal(id) {
   if(id==='modalInvoice')  populateInvoiceModal();
   if(id==='modalCalc')     { populateCalcModal(); document.getElementById('modalCalcTitle').innerHTML='NUEVO <span>CÁLCULO</span>'; }
   if(id==='modalEmpresa')  prepareModalEmpresa(null);
+  if(id==='modalGasto')    { document.getElementById('modalGastoTitle').innerHTML='NUEVO <span>GASTO</span>'; document.getElementById('btnGuardarGasto').textContent='Registrar Gasto'; }
   document.getElementById(id).classList.add('open');
   document.querySelectorAll('#'+id+' input[type=date]').forEach(i=>{ if(!i.value) i.value=new Date().toISOString().split('T')[0]; });
 }
@@ -1683,11 +1934,11 @@ function renderDashboard() {
   if (btnEdit) btnEdit.style.display = empresaActual ? 'inline-flex' : 'none';
 
   const totalDeuda=facturas.reduce((s,f)=>s+parseFloat(f.deuda),0);
-  // Total cobrado = suma de pagos reales recibidos (bruto, igual que en las filas)
   const totalIngresado=pagos.reduce((s,p)=>s+p.monto,0);
   const totalSaldo=facturas.reduce((s,f)=>{const sal=getSaldo(f.id);return s+(sal>0?sal:0);},0);
   const pendientes=facturas.filter(f=>getEstatus(f.id)!=='Pagado').length;
-  document.getElementById('statsRow').innerHTML=`<div class="stat-card"><div class="stat-label">Total Facturado</div><div class="stat-value blue">$${(totalDeuda/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Total Ingresado</div><div class="stat-value green">$${(totalIngresado/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Saldo por Cobrar</div><div class="stat-value ${totalSaldo>0?'red':'green'}">$${(Math.abs(totalSaldo)/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Pendientes</div><div class="stat-value orange">${pendientes}</div></div>`;
+  const totalGastosD=gastos.reduce((s,g)=>s+(parseFloat(g.monto)||0),0);
+  document.getElementById('statsRow').innerHTML=`<div class="stat-card"><div class="stat-label">Total Facturado</div><div class="stat-value blue">$${(totalDeuda/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Total Ingresado</div><div class="stat-value green">$${(totalIngresado/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Saldo por Cobrar</div><div class="stat-value ${totalSaldo>0?'red':'green'}">$${(Math.abs(totalSaldo)/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Total Gastos</div><div class="stat-value" style="color:var(--pink)">$${(totalGastosD/1000).toFixed(1)}K</div></div><div class="stat-card"><div class="stat-label">Pendientes</div><div class="stat-value orange">${pendientes}</div></div>`;
   const tbody=document.getElementById('dashboardTable');
   const recent=[...facturas].sort((a,b)=>a.fecha<b.fecha?-1:1);
   if(!recent.length){tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Sin datos aún</div></div></td></tr>`;return;}
@@ -2271,8 +2522,8 @@ function numeroALetras(numero, moneda) {
     return convertir(m) + ' millones' + (r > 0 ? ' ' + convertir(r) : '');
   }
 
-  const entero = Math.floor(Math.abs(numero));
-  const cents  = Math.round((Math.abs(numero) - entero) * 100);
+  const entero = Math.floor(Math.round(Math.abs(numero) * 100) / 100);
+  const cents  = Math.round(Math.abs(numero) * 100) % 100;
 
   const monedas = {
     'USD': ['dólar','dólares'],
@@ -2992,16 +3243,16 @@ function renderEmpresas() {
     const sc = emp.colorSecondary || '#0EA5E9';
     const ac = emp.colorAccent    || '#22C55E';
     const logoHTML = emp.logo
-      ? `<img src="${emp.logo}" style="width:110px;height:72px;object-fit:contain;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4))">`
+      ? `<div style="width:120px;height:76px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;border-radius:12px;overflow:hidden;background:#0A0A0F"><img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;filter:brightness(1.1) contrast(1.05)"></div>`
       : `<div style="width:80px;height:56px;background:linear-gradient(135deg,${pc},${sc});border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:16px;box-shadow:0 6px 20px ${pc}44">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
     const dots = `<div style="display:flex;gap:5px;justify-content:center;margin-top:10px"><span style="width:8px;height:8px;border-radius:50%;background:${pc};display:inline-block"></span><span style="width:8px;height:8px;border-radius:50%;background:${sc};display:inline-block"></span><span style="width:8px;height:8px;border-radius:50%;background:${ac};display:inline-block"></span></div>`;
     const nota = isActiva
       ? `<div style="margin-top:12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:${pc};font-weight:700">✓ Activa</div>`
       : `<div style="margin-top:12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#444455">Toca para activar</div>`;
     return `<div onclick="seleccionarEmpresaDirecta('${key}')"
-      style="background:${isActiva?pc+'10':'var(--surface)'};border:2px solid ${isActiva?pc:'#1E1E28'};border-radius:20px;padding:28px 24px;text-align:center;min-width:200px;max-width:240px;width:220px;cursor:pointer;transition:all .25s;position:relative"
-      onmouseover="this.style.borderColor='${pc}';this.style.background='${pc}18';this.style.transform='translateY(-3px)'"
-      onmouseout="this.style.borderColor='${isActiva?pc:'#1E1E28'}';this.style.background='${isActiva?pc+'10':'var(--surface)'}';this.style.transform='translateY(0)'">
+      style="background:${isActiva?`radial-gradient(ellipse 80% 60% at 50% 0%,${pc}18 0%,#12121A 100%)`:'#12121A'};border:1.5px solid ${isActiva?pc:'#1E1E28'};border-radius:22px;padding:28px 24px;text-align:center;min-width:200px;max-width:240px;width:220px;cursor:pointer;transition:all .3s;position:relative;box-shadow:${isActiva?`0 0 0 1px ${pc}44, 0 12px 40px ${pc}22`:'0 4px 20px rgba(0,0,0,.4)'}"
+      onmouseover="this.style.borderColor='${pc}';this.style.background='radial-gradient(ellipse 80% 60% at 50% 0%,${pc}20 0%,#12121A 100%)';this.style.transform='translateY(-4px)';this.style.boxShadow='0 0 0 1px ${pc}55,0 16px 48px ${pc}33'"
+      onmouseout="this.style.borderColor='${isActiva?pc:'#1E1E28'}';this.style.background='${isActiva?`radial-gradient(ellipse 80% 60% at 50% 0%,${pc}18 0%,#12121A 100%)`:'#12121A'}';this.style.transform='translateY(0)';this.style.boxShadow='${isActiva?`0 0 0 1px ${pc}44,0 12px 40px ${pc}22`:'0 4px 20px rgba(0,0,0,.4)'}'">
       <button class="emp-edit-btn" onclick="event.stopPropagation();editEmpresaModal('${key}')" title="Editar">✏️</button>
       ${logoHTML}
       <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#EEEEF2;margin-bottom:3px;line-height:1.2">${emp.nombre}</div>
@@ -3020,7 +3271,7 @@ function rebuildEmpresaSelector() {
     const isActiva=key===actKey;
     const pc=emp.colorPrimary||'#6366F1', sc=emp.colorSecondary||'#0EA5E9', ac=emp.colorAccent||'#22C55E';
     const logoHTML=emp.logo
-      ?`<img src="${emp.logo}" style="width:100px;height:66px;object-fit:contain;margin-bottom:12px">`
+      ?`<div style="width:110px;height:70px;display:flex;align-items:center;justify-content:center;border-radius:10px;overflow:hidden;background:#0A0A0F;margin-bottom:12px"><img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;filter:brightness(1.1) contrast(1.05)"></div>`
       :`<div style="width:72px;height:50px;background:linear-gradient(135deg,${pc},${sc});border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:12px">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
     const dots=`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${pc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${sc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${ac}"></span>`;
     return `<div class="empresa-card" onclick="seleccionarEmpresaDirecta('${key}')"
@@ -3061,7 +3312,7 @@ function applyEmpresaTheme(emp) {
   if (empSub)    empSub.textContent    = emp.ein || emp.sub || '';
   if (empLogo) {
     if (emp.logo) {
-      empLogo.innerHTML = `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:5px">`;
+      empLogo.innerHTML = `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:5px;mix-blend-mode:screen;filter:brightness(1.1)">`;
       empLogo.style.background = '#0A0A0F';
     } else {
       empLogo.innerHTML = emp.nombre.split(' ').map(w=>w[0]).slice(0,2).join('');
@@ -3076,6 +3327,499 @@ function applyEmpresaTheme(emp) {
 
 
 
+// ═══════════════════════════════════════════════
+// MÓDULO GASTOS
+// ═══════════════════════════════════════════════
+
+const GASTO_CAT_ICONS = {
+  'Operacional':'⚙️','Nómina':'👥','Logística':'🚚','Alquiler':'🏠',
+  'Servicios':'💡','Impuestos':'🏛️','Bancario':'🏦','Otro':'📋'
+};
+
+function saveGasto() {
+  const fecha     = document.getElementById('gasto_fecha').value;
+  const concepto  = document.getElementById('gasto_concepto').value.trim();
+  const monto     = parseFloat(document.getElementById('gasto_monto').value);
+  const categoria = document.getElementById('gasto_categoria').value;
+  const metodo    = document.getElementById('gasto_metodo').value;
+  const proveedor = document.getElementById('gasto_proveedor').value.trim();
+  const referencia= document.getElementById('gasto_referencia').value.trim();
+  const notas     = document.getElementById('gasto_notas').value.trim();
+  const editId    = document.getElementById('gasto_id').value;
+
+  if (!fecha || !concepto || !monto || monto <= 0) {
+    toast('Fecha, concepto y monto son obligatorios', 'error'); return;
+  }
+  const data = { fecha, concepto, monto, categoria, metodo, proveedor, referencia, notas };
+  if (editId) {
+    const i = gastos.findIndex(g => g.id === editId);
+    if (i !== -1) gastos[i] = { ...gastos[i], ...data };
+    toast('Gasto actualizado');
+  } else {
+    gastos.push({ id: uid(), ...data, creado: new Date().toISOString() });
+    toast('Gasto registrado');
+  }
+  saveGastosDB(); closeModal('modalGasto'); renderGastos(); updateBadges(); renderDashboard();
+}
+
+function editGasto(id) {
+  const g = gastos.find(x => x.id === id); if (!g) return;
+  document.getElementById('gasto_id').value         = g.id;
+  document.getElementById('gasto_fecha').value      = g.fecha;
+  document.getElementById('gasto_concepto').value   = g.concepto;
+  document.getElementById('gasto_monto').value      = g.monto;
+  document.getElementById('gasto_categoria').value  = g.categoria;
+  document.getElementById('gasto_metodo').value     = g.metodo || 'Transferencia';
+  document.getElementById('gasto_proveedor').value  = g.proveedor || '';
+  document.getElementById('gasto_referencia').value = g.referencia || '';
+  document.getElementById('gasto_notas').value      = g.notas || '';
+  document.getElementById('modalGastoTitle').innerHTML       = 'EDITAR <span>GASTO</span>';
+  document.getElementById('btnGuardarGasto').textContent = 'Actualizar Gasto';
+  document.getElementById('modalGasto').classList.add('open');
+}
+
+function deleteGasto(id) {
+  if (!confirm('¿Eliminar este gasto?')) return;
+  gastos = gastos.filter(g => g.id !== id);
+  saveGastosDB(); renderGastos(); updateBadges(); renderDashboard();
+  toast('Gasto eliminado');
+}
+
+function renderGastos() {
+  if (!document.getElementById('gastosTable')) return;
+  const tbody    = document.getElementById('gastosTable');
+  const statsRow = document.getElementById('gastosStatsRow');
+  const filtMes  = document.getElementById('filtroMesGasto').value;
+  const filtCat  = document.getElementById('filtroCatGasto').value;
+
+  let rows = [...gastos].sort((a, b) => b.fecha.localeCompare(a.fecha));
+  if (filtMes) rows = rows.filter(g => g.fecha && g.fecha.slice(5, 7) === filtMes);
+  if (filtCat) rows = rows.filter(g => g.categoria === filtCat);
+
+  // Stat cards
+  const totalGastos   = rows.reduce((s, g) => s + (parseFloat(g.monto) || 0), 0);
+  const totalGastosTodos = gastos.reduce((s, g) => s + (parseFloat(g.monto) || 0), 0);
+  const byCategoria   = {};
+  rows.forEach(g => { byCategoria[g.categoria] = (byCategoria[g.categoria] || 0) + (parseFloat(g.monto) || 0); });
+  const topCat        = Object.entries(byCategoria).sort((a,b) => b[1]-a[1])[0];
+  const totalIngresos = pagos.reduce((s, p) => s + (parseFloat(p.monto) || 0), 0);
+  const margen        = totalIngresos - totalGastosTodos;
+
+  if (statsRow) statsRow.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Gastos${filtMes||filtCat?' (filtrado)':''}</div>
+      <div class="stat-value" style="color:var(--pink)">${fmtUSD(totalGastos)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Registros</div>
+      <div class="stat-value orange">${rows.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mayor Categoría</div>
+      <div class="stat-value" style="font-size:18px;line-height:1.3">${topCat ? (GASTO_CAT_ICONS[topCat[0]]||'📋')+' '+topCat[0] : '—'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Margen Cobros − Gastos</div>
+      <div class="stat-value ${margen >= 0 ? 'green' : 'red'}">${fmtUSD(margen)}</div>
+    </div>`;
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">📤</div><div class="empty-text">Sin gastos registrados</div><div class="empty-sub">Registra el primer gasto operacional</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(g => {
+    const ico = GASTO_CAT_ICONS[g.categoria] || '📋';
+    const montoColor = 'amount-neg';
+    return `<tr>
+      <td class="mono">${fmtDate(g.fecha)}</td>
+      <td><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(255,107,107,.1);color:var(--pink)">${ico} ${g.categoria}</span></td>
+      <td style="font-weight:500">${g.concepto}</td>
+      <td style="font-size:12px;color:var(--text2)">${g.proveedor || '—'}</td>
+      <td class="mono ${montoColor}">${fmtUSD(g.monto)}</td>
+      <td style="font-size:12px;color:var(--text2)">${g.metodo || '—'}</td>
+      <td style="font-size:12px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.referencia ? g.referencia+' ' : ''}${g.notas || ''}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-secondary btn-sm" onclick="editGasto('${g.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteGasto('${g.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Seed inicial de gastos DAL Miami desde estados de cuenta Chase
+// Febrero y Marzo 2026
+function seedGastosDalMiami() {
+  if (!empresaActual || empresaActual.dbPrefix !== 'dalmiami_') return;
+  // Solo omitir si ya tiene datos de Enero 2026 (seed completo)
+  const tieneEnero = gastos.some(g => g.fecha && g.fecha.startsWith('2026-01'));
+  if (tieneEnero) return;
+
+  const seed = [
+    // ══ ENERO 2026 ══
+    {id:uid(),fecha:'2026-01-05',concepto:'CTLP Miami Vending',categoria:'Operacional',monto:2.10,metodo:'Tarjeta',proveedor:'CTLP Miami Vending Hialeah',referencia:'Card 4410',notas:''},
+    {id:uid(),fecha:'2026-01-05',concepto:'Experian Credit Report',categoria:'Servicios',monto:9.99,metodo:'Tarjeta',proveedor:'Experian',referencia:'479-3436237 CA',notas:'Suscripción mensual'},
+    {id:uid(),fecha:'2026-01-06',concepto:'Domestic Incoming Wire Fee ×2',categoria:'Bancario',monto:30.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'2 fees @ $15 — Truist + BNY Mellon'},
+    {id:uid(),fecha:'2026-01-08',concepto:'Wire — Seaboard Marine (flete marítimo)',categoria:'Logística',monto:10960.00,metodo:'Transferencia',proveedor:'Seaboard Marine, New York NY',referencia:'Trn: 3404426008Es',notas:'Imad: 0108Mmqfmp2N022898 — flete embarque'},
+    {id:uid(),fecha:'2026-01-08',concepto:'Online Domestic Wire Fee',categoria:'Bancario',monto:25.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire Seaboard Marine'},
+    {id:uid(),fecha:'2026-01-09',concepto:'FedEx — Envío documentos',categoria:'Logística',monto:18.45,metodo:'Tarjeta',proveedor:'FedEx',referencia:'Card 4410 Collierville TN',notas:''},
+    {id:uid(),fecha:'2026-01-09',concepto:'Ring Standard Plan — Alarma',categoria:'Servicios',monto:10.69,metodo:'Tarjeta',proveedor:'Ring.com',referencia:'CA Card 4410',notas:'Suscripción mensual'},
+    {id:uid(),fecha:'2026-01-12',concepto:'Wire Internacional — HCDAISLA SL (Consultancy)',categoria:'Otro',monto:1470.00,metodo:'Transferencia',proveedor:'HCDAISLA SL — España',referencia:'Trn: 5027400012Re EUR 1,226.72',notas:'⚠️ Consultoría — confirmar con CPA si deducible o distribución'},
+    {id:uid(),fecha:'2026-01-12',concepto:'Online FX International Wire Fee',categoria:'Bancario',monto:5.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire internacional EUR'},
+    {id:uid(),fecha:'2026-01-13',concepto:'Domestic Incoming Wire Fee',categoria:'Bancario',monto:15.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire entrante Truist'},
+    {id:uid(),fecha:'2026-01-20',concepto:'Ring Multi Plan — Alarma',categoria:'Servicios',monto:10.69,metodo:'Tarjeta',proveedor:'Ring.com',referencia:'CA Card 4410',notas:'Suscripción mensual'},
+    {id:uid(),fecha:'2026-01-20',concepto:'Domestic Incoming Wire Fee',categoria:'Bancario',monto:15.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire entrante Truist'},
+    {id:uid(),fecha:'2026-01-21',concepto:'Amazon Marketplace — Suministros',categoria:'Operacional',monto:109.58,metodo:'Tarjeta',proveedor:'Amazon Mktpl',referencia:'Card 4410',notas:'⚠️ Verificar naturaleza del gasto con CPA'},
+    {id:uid(),fecha:'2026-01-22',concepto:'Wire — AJC International Inc (compra mercancía)',categoria:'Logística',monto:30000.00,metodo:'Transferencia',proveedor:'AJC International Inc, Chicago IL',referencia:'Trn: 3534566022Es',notas:'Imad: 0122Mmqfmp2M032941'},
+    {id:uid(),fecha:'2026-01-22',concepto:'Online Domestic Wire Fee',categoria:'Bancario',monto:25.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire AJC'},
+    {id:uid(),fecha:'2026-01-26',concepto:'Auto Insurance UAIC',categoria:'Servicios',monto:273.28,metodo:'Tarjeta',proveedor:'UAIC 305-940-5022',referencia:'FL Card 4410',notas:'⚠️ Seguro auto — confirmar % uso negocio con CPA'},
+    {id:uid(),fecha:'2026-01-28',concepto:'Wire — AJC International Inc (compra mercancía)',categoria:'Logística',monto:50000.00,metodo:'Transferencia',proveedor:'AJC International Inc, Chicago IL',referencia:'Trn: 3373476028Es N.Orden 3244837',notas:'Imad: 0128Mmqfmp2K023619'},
+    {id:uid(),fecha:'2026-01-28',concepto:'Online Domestic Wire Fee',categoria:'Bancario',monto:25.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire AJC'},
+    {id:uid(),fecha:'2026-01-28',concepto:'Domestic Incoming Wire Fee',categoria:'Bancario',monto:15.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire entrante Truist'},
+    {id:uid(),fecha:'2026-01-29',concepto:'Wire — AJC International Inc (balance orden 3244837)',categoria:'Logística',monto:5872.50,metodo:'Transferencia',proveedor:'AJC International Inc, Chicago IL',referencia:'Trn: 3547306029Es N.3244837',notas:'Imad: 0129Mmqfmp2M031009 — complemento orden'},
+    {id:uid(),fecha:'2026-01-29',concepto:'Online Domestic Wire Fee',categoria:'Bancario',monto:25.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire AJC balance'},
+    {id:uid(),fecha:'2026-01-29',concepto:'Southeast Toyota Finance — Cuota vehículo',categoria:'Operacional',monto:526.13,metodo:'Online Payment',proveedor:'Southeast Toyota Finance',referencia:'27509446695',notas:'Cuota mensual auto'},
+    {id:uid(),fecha:'2026-01-29',concepto:'Domestic Incoming Wire Fee',categoria:'Bancario',monto:15.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire entrante BNY Mellon'},
+    {id:uid(),fecha:'2026-01-30',concepto:'Ring Multi Plan — Alarma',categoria:'Servicios',monto:10.69,metodo:'Tarjeta',proveedor:'Ring.com',referencia:'CA Card 4410',notas:'Suscripción mensual'},
+
+    // ══ FEBRERO 2026 ══
+    {id:uid(),fecha:'2026-02-03',concepto:'Experian Credit Report',categoria:'Servicios',monto:9.99,metodo:'Tarjeta',proveedor:'Experian',referencia:'479-3436237 CA',notas:'Suscripción mensual'},
+    {id:uid(),fecha:'2026-02-03',concepto:'Wire Transfer — Pedro Hernandez Marquez',categoria:'Nómina',monto:2000.00,metodo:'Transferencia',proveedor:'Pedro Hernandez Marquez',referencia:'Trn: 3230906034Es',notas:'Pago mensual socio 1%'},
+    {id:uid(),fecha:'2026-02-03',concepto:'Online Domestic Wire Fee',categoria:'Bancario',monto:25.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire saliente feb'},
+    {id:uid(),fecha:'2026-02-06',concepto:'Domestic Incoming Wire Fee',categoria:'Bancario',monto:15.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire entrante — Mag GC Construction'},
+    {id:uid(),fecha:'2026-02-17',concepto:'Ring Multi Plan — Alarma',categoria:'Servicios',monto:10.69,metodo:'Tarjeta',proveedor:'Ring.com',referencia:'CA Card 4410',notas:'Suscripción mensual'},
+    {id:uid(),fecha:'2026-02-25',concepto:'Auto Insurance UAIC',categoria:'Servicios',monto:273.28,metodo:'Tarjeta',proveedor:'UAIC 305-940-5022',referencia:'FL Card 4410',notas:'⚠️ Seguro auto — confirmar % uso negocio con CPA'},
+    {id:uid(),fecha:'2026-02-26',concepto:'Southeast Toyota Finance — Cuota vehículo',categoria:'Operacional',monto:526.13,metodo:'Online Payment',proveedor:'Southeast Toyota Finance',referencia:'27860074254',notas:'Cuota mensual auto'},
+
+    // ══ MARZO 2026 ══
+    {id:uid(),fecha:'2026-03-02',concepto:'Klarna — Giorgio Armani',categoria:'Otro',monto:51.89,metodo:'Tarjeta',proveedor:'Giorgio Armani / Klarna',referencia:'Columbus OH Card 4410',notas:'⚠️ Gasto personal — excluir del P&L con CPA'},
+    {id:uid(),fecha:'2026-03-02',concepto:'Ring Multi Plan — Alarma',categoria:'Servicios',monto:10.69,metodo:'Tarjeta',proveedor:'Ring.com',referencia:'CA Card 4410',notas:'Suscripción mensual'},
+    {id:uid(),fecha:'2026-03-03',concepto:'Experian Credit Report',categoria:'Servicios',monto:9.99,metodo:'Tarjeta',proveedor:'Experian',referencia:'479-3436237 CA',notas:'Suscripción mensual'},
+    {id:uid(),fecha:'2026-03-04',concepto:'Wire Transfer — Pedro Hernandez Marquez',categoria:'Nómina',monto:2000.00,metodo:'Transferencia',proveedor:'Pedro Hernandez Marquez',referencia:'Trn: 3714906063Es',notas:'Pago mensual socio 1%'},
+    {id:uid(),fecha:'2026-03-04',concepto:'Online Domestic Wire Fee',categoria:'Bancario',monto:25.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire saliente mar'},
+    {id:uid(),fecha:'2026-03-04',concepto:'International Incoming Wire Fee ×3',categoria:'Bancario',monto:45.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'3 fees @ $15 — Revolut/Caribbean Online Services'},
+    {id:uid(),fecha:'2026-03-11',concepto:'Wire — AJC International Inc (compra mercancía)',categoria:'Logística',monto:33944.80,metodo:'Transferencia',proveedor:'AJC International Inc, Chicago IL',referencia:'Trn: 3113636070Es',notas:'Imad: 0311Mmqfmp2N001978'},
+    {id:uid(),fecha:'2026-03-11',concepto:'Online Domestic Wire Fee',categoria:'Bancario',monto:25.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire AJC'},
+    {id:uid(),fecha:'2026-03-16',concepto:'NIC-DOS Division — Florida License/Registration',categoria:'Impuestos',monto:138.75,metodo:'Tarjeta',proveedor:'NIC*-DOS Division of Florida',referencia:'FL Card 4410',notas:'Licencia/registro estatal FL'},
+    {id:uid(),fecha:'2026-03-17',concepto:'Ring Multi Plan — Alarma',categoria:'Servicios',monto:10.69,metodo:'Tarjeta',proveedor:'Ring.com',referencia:'CA Card 4410',notas:'Suscripción mensual'},
+    {id:uid(),fecha:'2026-03-17',concepto:'Domestic Incoming Wire Fee',categoria:'Bancario',monto:15.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire entrante BNY Mellon — Caribbean Online'},
+    {id:uid(),fecha:'2026-03-18',concepto:'FedEx MIA — Envío',categoria:'Logística',monto:13.69,metodo:'Tarjeta',proveedor:'FedEx Miami',referencia:'FL Card 4410',notas:''},
+    {id:uid(),fecha:'2026-03-24',concepto:'Wire — AJC International Inc (compra mercancía)',categoria:'Logística',monto:36977.80,metodo:'Transferencia',proveedor:'AJC International Inc, Chicago IL',referencia:'Trn: 3027536083Es',notas:'Imad: 0324Mmqfmp2N001553'},
+    {id:uid(),fecha:'2026-03-24',concepto:'Online Domestic Wire Fee',categoria:'Bancario',monto:25.00,metodo:'Bancario',proveedor:'JPMorgan Chase',referencia:'',notas:'Fee wire AJC'},
+    {id:uid(),fecha:'2026-03-25',concepto:'Auto Insurance UAIC',categoria:'Servicios',monto:273.28,metodo:'Tarjeta',proveedor:'UAIC 305-940-5022',referencia:'FL Card 4410',notas:'⚠️ Seguro auto — confirmar % uso negocio con CPA'},
+    {id:uid(),fecha:'2026-03-30',concepto:'Ring Multi Plan — Alarma',categoria:'Servicios',monto:10.69,metodo:'Tarjeta',proveedor:'Ring.com',referencia:'CA Card 4410',notas:'Suscripción mensual'},
+    {id:uid(),fecha:'2026-03-31',concepto:'Southeast Toyota Finance — Cuota vehículo',categoria:'Operacional',monto:526.13,metodo:'Online Payment',proveedor:'Southeast Toyota Finance',referencia:'28208283073',notas:'Cuota mensual auto'},
+  ].map(g => ({ ...g, creado: new Date().toISOString() }));
+
+  // Reemplazar completamente — seed oficial con los 3 meses
+  gastos = seed;
+  saveGastosDB();
+}
+
+// ═══════════════════════════════════════════════
+// MÓDULO P&L — FORM 1065 PARTNERSHIP (DAL Miami)
+// Estructura basada en taxes 2025 presentados por Dailin Pages / RO Miami
+// ═══════════════════════════════════════════════
+
+// Mapeo categorías SiFa → líneas reales Form 1065
+const F1065_MAP = {
+  'Logística':   { linea:'Cost of Goods Sold',          ref:'L2 / Part II',  orden:1, esCOGS:true  },
+  'Nómina':      { linea:'Wages & Salaries',             ref:'L9',            orden:2, esCOGS:false },
+  'Alquiler':    { linea:'Rent',                         ref:'L13',           orden:3, esCOGS:false },
+  'Servicios':   { linea:'Utilities & Subscriptions',    ref:'L20',           orden:4, esCOGS:false },
+  'Impuestos':   { linea:'Taxes & Licenses',             ref:'L14',           orden:5, esCOGS:false },
+  'Bancario':    { linea:'Bank Charges & Fees',          ref:'L20 Other',     orden:6, esCOGS:false },
+  'Operacional': { linea:'Other Deductions',             ref:'L20',           orden:7, esCOGS:false },
+  'Otro':        { linea:'Other Deductions (review)',    ref:'L20 ⚠️',        orden:8, esCOGS:false },
+};
+
+const MESES_LABEL = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function renderPnl() {
+  if (!document.getElementById('pnlKpis')) return;
+
+  const anio = document.getElementById('pnlAnio') ? document.getElementById('pnlAnio').value : '2026';
+  const mes  = document.getElementById('pnlMes')  ? document.getElementById('pnlMes').value  : '';
+
+  // ── Filtrar por período ──
+  function filtra(arr, campo) {
+    return arr.filter(x => {
+      if (!x[campo]) return false;
+      if (!x[campo].startsWith(anio)) return false;
+      if (mes && x[campo].slice(5,7) !== mes) return false;
+      return true;
+    });
+  }
+
+  const cobrosFilt  = filtra(pagos,   'fecha');
+  const gastosFilt  = filtra(gastos,  'fecha');
+
+  // ── Ingresos brutos: cobros del período ──
+  const grossRevenue = cobrosFilt.reduce((s,p) => s + (parseFloat(p.monto)||0), 0);
+
+  // ── COGS: solo categoría Logística ──
+  const cogs = gastosFilt
+    .filter(g => g.categoria === 'Logística')
+    .reduce((s,g) => s + (parseFloat(g.monto)||0), 0);
+
+  // ── Gross Profit ──
+  const grossProfit = grossRevenue - cogs;
+
+  // ── Deductions (todo lo demás) por categoría ──
+  const deducciones = {};
+  gastosFilt.filter(g => g.categoria !== 'Logística').forEach(g => {
+    const cat = g.categoria || 'Otro';
+    if (!deducciones[cat]) deducciones[cat] = 0;
+    deducciones[cat] += parseFloat(g.monto) || 0;
+  });
+  const totalDeducciones = Object.values(deducciones).reduce((s,v) => s+v, 0);
+  const totalEgresos     = cogs + totalDeducciones;
+
+  // ── Net Income (Ordinary Business Income/Loss) ──
+  const netIncome = grossRevenue - totalEgresos;
+  const margenPct = grossRevenue > 0 ? ((netIncome/grossRevenue)*100).toFixed(1) : 0;
+
+  // ── Subtitle ──
+  const periodo = mes ? `${MESES_LABEL[parseInt(mes)]} ${anio}` : `Año ${anio}`;
+  const sub = document.getElementById('pnlSubtitle');
+  if (sub) sub.textContent = `Form 1065 Partnership · ${periodo} · DAL Miami Export LLC · EIN 93-1412443`;
+
+  // ── KPIs ──
+  document.getElementById('pnlKpis').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Gross Revenue · L1</div>
+      <div class="stat-value green">${fmtUSD(grossRevenue)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cost of Goods Sold · L2</div>
+      <div class="stat-value" style="color:var(--orange)">${fmtUSD(cogs)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Gross Profit · L3</div>
+      <div class="stat-value ${grossProfit>=0?'green':'red'}">${fmtUSD(grossProfit)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Deductions · L9-20</div>
+      <div class="stat-value" style="color:var(--pink)">${fmtUSD(totalDeducciones)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Ordinary Income · L22</div>
+      <div class="stat-value ${netIncome>=0?'green':'red'}">${fmtUSD(netIncome)}</div>
+    </div>`;
+
+  // ── Panel INGRESOS ──
+  const ingDiv = document.getElementById('pnlIngresos');
+  if (ingDiv) {
+    if (!cobrosFilt.length) {
+      ingDiv.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text2);font-size:12px">Sin cobros registrados en este período.<br>Registra cobros en la sección <strong>Cobros</strong>.</div>`;
+    } else {
+      // Agrupar por fuente (notas o descripción corta)
+      const resumen = {};
+      cobrosFilt.forEach(p => {
+        const f = facturas.find(x => x.id === p.facturaId);
+        const c = f ? clientes.find(x => x.id === f.clienteId) : null;
+        const key = c ? c.nombre : 'Cliente directo';
+        resumen[key] = (resumen[key]||0) + (parseFloat(p.monto)||0);
+      });
+      ingDiv.innerHTML = Object.entries(resumen).map(([nombre, monto]) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 20px;border-bottom:1px solid var(--border);font-size:13px">
+          <span style="color:var(--text2)">↳ ${nombre}</span>
+          <span class="mono" style="color:var(--green)">${fmtUSD(monto)}</span>
+        </div>`).join('') +
+        `<div style="display:flex;justify-content:space-between;padding:10px 20px;font-size:12px;color:var(--text2)">
+          <span>${cobrosFilt.length} cobro(s) registrado(s)</span>
+          <span>L1 · Gross receipts</span>
+        </div>`;
+    }
+  }
+  const tiDiv = document.getElementById('pnlTotalIngresosVal');
+  if (tiDiv) tiDiv.textContent = fmtUSD(grossRevenue);
+
+  // ── Panel EGRESOS — estructura Form 1065 ──
+  const egDiv = document.getElementById('pnlEgresos');
+  if (egDiv) {
+    let html = '';
+
+    // L2 — COGS primero
+    if (cogs > 0) {
+      const detCogs = gastosFilt.filter(g=>g.categoria==='Logística');
+      html += `
+        <div style="background:rgba(245,158,11,.06);border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <div>
+              <span style="font-size:12px;font-weight:700;color:var(--orange)">L2 · Cost of Goods Sold</span>
+              <span style="font-size:10px;color:var(--text2);margin-left:8px">${detCogs.length} transacciones · clic para expandir</span>
+            </div>
+            <span class="mono" style="color:var(--orange);font-weight:700">${fmtUSD(cogs)}</span>
+          </div>
+          <div style="display:none;padding:0 20px 12px">
+            ${detCogs.map(g=>`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);padding:4px 0;border-bottom:1px solid #1A1A24">
+              <span>${fmtDate(g.fecha)} · ${g.concepto}</span>
+              <span class="mono">${fmtUSD(g.monto)}</span>
+            </div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    // Deducciones agrupadas por categoría → línea Form 1065
+    const ordenCats = ['Nómina','Alquiler','Servicios','Impuestos','Bancario','Operacional','Otro'];
+    ordenCats.forEach(cat => {
+      if (!deducciones[cat]) return;
+      const info = F1065_MAP[cat] || {linea:cat, ref:'L20', esCOGS:false};
+      const detCat = gastosFilt.filter(g=>g.categoria===cat);
+      const esAlerta = cat === 'Otro';
+      html += `
+        <div style="border-bottom:1px solid var(--border)${esAlerta?';background:rgba(255,107,107,.04)':''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+            <div>
+              <span style="font-size:12px;font-weight:700;color:${esAlerta?'var(--pink)':'var(--text)'}">${info.ref} · ${info.linea}</span>
+              <span style="font-size:10px;color:var(--text2);margin-left:8px">${detCat.length} items</span>
+            </div>
+            <span class="mono" style="color:${esAlerta?'var(--pink)':'var(--pink)'};font-weight:700">${fmtUSD(deducciones[cat])}</span>
+          </div>
+          <div style="display:none;padding:0 20px 12px">
+            ${detCat.map(g=>`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);padding:4px 0;border-bottom:1px solid #1A1A24">
+              <span>${fmtDate(g.fecha)} · ${g.concepto}${g.notas&&g.notas.includes('⚠️')?` <span style="color:var(--orange)">⚠️</span>`:''}${g.proveedor?' · '+g.proveedor:''}</span>
+              <span class="mono">${fmtUSD(g.monto)}</span>
+            </div>`).join('')}
+          </div>
+        </div>`;
+    });
+
+    if (!html) html = `<div style="padding:24px;text-align:center;color:var(--text2);font-size:12px">Sin egresos en este período.</div>`;
+    egDiv.innerHTML = html;
+  }
+  const teDiv = document.getElementById('pnlTotalEgresosVal');
+  if (teDiv) teDiv.textContent = fmtUSD(totalEgresos);
+
+  // ── Resultado Neto ──
+  const netoDiv = document.getElementById('pnlResultadoNeto');
+  const netoVal = document.getElementById('pnlNetoVal');
+  const netoLbl = document.getElementById('pnlNetoLabel');
+  const netoMgn = document.getElementById('pnlNetoMargen');
+  if (netoDiv) {
+    const col = netIncome >= 0 ? 'var(--green)' : 'var(--pink)';
+    const bg  = netIncome >= 0 ? 'rgba(34,197,94,.06)' : 'rgba(255,107,107,.06)';
+    const brd = netIncome >= 0 ? 'rgba(34,197,94,.25)' : 'rgba(255,107,107,.25)';
+    netoDiv.style.background   = bg;
+    netoDiv.style.borderColor  = brd;
+    if (netoLbl) { netoLbl.textContent = netIncome >= 0 ? 'ORDINARY INCOME' : 'ORDINARY LOSS'; netoLbl.style.color = col; }
+    if (netoVal) { netoVal.textContent = fmtUSD(Math.abs(netIncome)); netoVal.style.color = col; }
+    if (netoMgn) netoMgn.textContent = `L22 Form 1065 · Margen bruto: ${grossRevenue>0?((grossProfit/grossRevenue)*100).toFixed(1):0}% · Margen neto: ${margenPct}%`;
+  }
+
+  // ── Desglose mensual (siempre año completo) ──
+  const tbody = document.getElementById('pnlMensualTable');
+  if (tbody) {
+    const mesesConDatos = new Set([
+      ...pagos.filter(p=>p.fecha&&p.fecha.startsWith(anio)).map(p=>p.fecha.slice(5,7)),
+      ...gastos.filter(g=>g.fecha&&g.fecha.startsWith(anio)).map(g=>g.fecha.slice(5,7))
+    ]);
+    if (!mesesConDatos.size) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:24px">Sin datos para ${anio}</td></tr>`;
+    } else {
+      let totalIngAnual=0, totalCOGSAnual=0, totalOpAnual=0, totalNetAnual=0;
+      const filas = [...mesesConDatos].sort().map(m => {
+        const ingM  = pagos.filter(p=>p.fecha&&p.fecha.startsWith(anio)&&p.fecha.slice(5,7)===m).reduce((s,p)=>s+(parseFloat(p.monto)||0),0);
+        const cogsM = gastos.filter(g=>g.fecha&&g.fecha.startsWith(anio)&&g.fecha.slice(5,7)===m&&g.categoria==='Logística').reduce((s,g)=>s+(parseFloat(g.monto)||0),0);
+        const opM   = gastos.filter(g=>g.fecha&&g.fecha.startsWith(anio)&&g.fecha.slice(5,7)===m&&g.categoria!=='Logística').reduce((s,g)=>s+(parseFloat(g.monto)||0),0);
+        const totEgM = cogsM + opM;
+        const netM   = ingM - totEgM;
+        totalIngAnual+=ingM; totalCOGSAnual+=cogsM; totalOpAnual+=opM; totalNetAnual+=netM;
+        const nc = netM>=0?'amount-pos':'amount-neg';
+        return `<tr>
+          <td style="font-weight:600">${MESES_LABEL[parseInt(m)]}</td>
+          <td style="text-align:right" class="mono amount-pos">${fmtUSD(ingM)}</td>
+          <td style="text-align:right" class="mono" style="color:var(--orange)">${fmtUSD(cogsM)}</td>
+          <td style="text-align:right" class="mono amount-neg">${fmtUSD(opM)}</td>
+          <td style="text-align:right" class="mono amount-neg">${fmtUSD(totEgM)}</td>
+          <td style="text-align:right" class="mono ${nc}">${netM<0?'('+fmtUSD(Math.abs(netM))+')':fmtUSD(netM)}</td>
+          <td style="text-align:center;font-size:12px">${ingM>0?((netM/ingM)*100).toFixed(1)+'%':'—'}</td>
+        </tr>`;
+      });
+      const totNetC = totalNetAnual>=0?'amount-pos':'amount-neg';
+      tbody.innerHTML = filas.join('') + `
+        <tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--border)">
+          <td>TOTAL ${anio}</td>
+          <td style="text-align:right" class="mono amount-pos">${fmtUSD(totalIngAnual)}</td>
+          <td style="text-align:right" class="mono" style="color:var(--orange)">${fmtUSD(totalCOGSAnual)}</td>
+          <td style="text-align:right" class="mono amount-neg">${fmtUSD(totalOpAnual)}</td>
+          <td style="text-align:right" class="mono amount-neg">${fmtUSD(totalCOGSAnual+totalOpAnual)}</td>
+          <td style="text-align:right" class="mono ${totNetC}">${totalNetAnual<0?'('+fmtUSD(Math.abs(totalNetAnual))+')':fmtUSD(totalNetAnual)}</td>
+          <td style="text-align:center;font-size:12px">${totalIngAnual>0?((totalNetAnual/totalIngAnual)*100).toFixed(1)+'%':'—'}</td>
+        </tr>`;
+    }
+  }
+}
+
+function exportarPnlPDF() {
+  if (!empresaActual) { toast('Selecciona una empresa primero','error'); return; }
+  const anio = document.getElementById('pnlAnio').value;
+  const mes  = document.getElementById('pnlMes').value;
+  const periodo = mes ? `${MESES_LABEL[parseInt(mes)]} ${anio}` : `Año ${anio}`;
+  const pc = empresaActual.colorPrimary || '#E8202A';
+  const hoy = new Date().toLocaleDateString('es',{year:'numeric',month:'long',day:'numeric'});
+
+  function filtra(arr,campo){return arr.filter(x=>x[campo]&&x[campo].startsWith(anio)&&(!mes||x[campo].slice(5,7)===mes));}
+  const cobrosFilt = filtra(pagos,'fecha');
+  const gastosFilt = filtra(gastos,'fecha');
+  const grossRevenue = cobrosFilt.reduce((s,p)=>s+(parseFloat(p.monto)||0),0);
+  const cogs = gastosFilt.filter(g=>g.categoria==='Logística').reduce((s,g)=>s+(parseFloat(g.monto)||0),0);
+  const grossProfit = grossRevenue - cogs;
+  const ded = {};
+  gastosFilt.filter(g=>g.categoria!=='Logística').forEach(g=>{ded[g.categoria]=(ded[g.categoria]||0)+(parseFloat(g.monto)||0);});
+  const totalDed = Object.values(ded).reduce((s,v)=>s+v,0);
+  const netIncome = grossRevenue - cogs - totalDed;
+
+  const logoH = empresaActual.logo
+    ? `<img src="${empresaActual.logo}" style="height:40px;object-fit:contain">`
+    : `<div style="font-size:18px;font-weight:900;color:${pc}">${empresaActual.nombre}</div>`;
+
+  const ordenCats = ['Nómina','Alquiler','Servicios','Impuestos','Bancario','Operacional','Otro'];
+  const filasDeduccion = ordenCats.filter(c=>ded[c]).map(c=>{
+    const info = F1065_MAP[c]||{linea:c,ref:'L20'};
+    return `<tr><td style="padding:7px 10px;font-size:11px">${info.ref}</td><td style="padding:7px 10px;font-size:11px">${info.linea}</td><td style="padding:7px 10px;text-align:right;font-size:11px;font-family:monospace">${fmtUSD(ded[c])}</td></tr>`;
+  }).join('');
+
+  const nc = netIncome>=0?'#16a34a':'#dc2626';
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>P&L ${empresaActual.nombre} ${periodo}</title>
+  <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;background:#fff;padding:32px}@media print{body{padding:0}}table{width:100%;border-collapse:collapse}.section-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#888;margin:18px 0 6px;font-weight:700}</style>
+  </head><body>
+  <div style="border-bottom:3px solid ${pc};padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end">
+    <div>${logoH}<div style="font-size:9px;color:#888;margin-top:4px">${empresaActual.direccion||''} · ${empresaActual.ein||''}</div></div>
+    <div style="text-align:right"><div style="font-size:13px;font-weight:900;color:${pc}">PROFIT & LOSS STATEMENT</div><div style="font-size:9px;color:#888;margin-top:2px">Form 1065 · Partnership · ${periodo}</div><div style="font-size:9px;color:#888">Preparado: ${hoy}</div></div>
+  </div>
+  <div class="section-title">L1 · Gross Revenue</div>
+  <table><tr style="background:#f5f5f5"><td style="padding:8px 10px;font-size:12px;font-weight:700">Total Ingresos / Gross Receipts</td><td style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;font-family:monospace;color:#16a34a">${fmtUSD(grossRevenue)}</td></tr></table>
+  <div class="section-title">L2 · Cost of Goods Sold (COGS)</div>
+  <table><tr><td style="padding:7px 10px;font-size:11px">Compras de mercancía / Logística (AJC, Seaboard, FedEx)</td><td style="padding:7px 10px;text-align:right;font-size:11px;font-family:monospace">(${fmtUSD(cogs)})</td></tr>
+  <tr style="background:#f5f5f5"><td style="padding:8px 10px;font-size:12px;font-weight:700">L3 · Gross Profit</td><td style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;font-family:monospace;color:${grossProfit>=0?'#16a34a':'#dc2626'}">${fmtUSD(grossProfit)}</td></tr></table>
+  <div class="section-title">L9–L20 · Deductions</div>
+  <table style="border:1px solid #eee"><thead><tr style="background:#1a1a2e;color:#fff"><th style="padding:7px 10px;text-align:left;font-size:9px">REF.</th><th style="padding:7px 10px;text-align:left;font-size:9px">CONCEPTO</th><th style="padding:7px 10px;text-align:right;font-size:9px">MONTO</th></tr></thead>
+  <tbody>${filasDeduccion}<tr style="background:#f5f5f5"><td colspan="2" style="padding:8px 10px;font-size:11px;font-weight:700">Total Deductions</td><td style="padding:8px 10px;text-align:right;font-size:11px;font-weight:700;font-family:monospace">(${fmtUSD(totalDed)})</td></tr></tbody></table>
+  <div style="margin-top:20px;padding:16px 20px;border:2px solid ${nc};border-radius:8px;display:flex;justify-content:space-between;align-items:center;background:${netIncome>=0?'#f0fdf4':'#fff1f2'}">
+    <div><div style="font-size:14px;font-weight:900;color:${nc}">L22 · ${netIncome>=0?'ORDINARY BUSINESS INCOME':'ORDINARY BUSINESS LOSS'}</div><div style="font-size:9px;color:#888;margin-top:3px">Form 1065 · Partnership · ${empresaActual.ein||''}</div></div>
+    <div style="font-size:24px;font-weight:900;color:${nc};font-family:monospace">${netIncome<0?'('+fmtUSD(Math.abs(netIncome))+')':fmtUSD(netIncome)}</div>
+  </div>
+  <div style="margin-top:20px;padding:12px 16px;background:#fffbeb;border-left:4px solid #f59e0b;font-size:10px;color:#92600a;line-height:1.8">
+    <strong>⚠️ Aviso:</strong> Este reporte es generado por SiFa con base en los estados de cuenta Chase. Los gastos marcados con ⚠️ requieren revisión con el CPA antes de presentar. 
+    Gastos personales (Giorgio Armani, Amazon personal, seguro auto — % personal) deben excluirse. Documento preparado para uso interno — no reemplaza el criterio de Dailin Pages / RO Miami.
+  </div>
+  <div style="margin-top:16px;display:flex;justify-content:space-between;font-size:9px;color:#aaa;border-top:1px solid #eee;padding-top:10px">
+    <span>DAL Miami Export LLC · EIN: 93-1412443 · Partnership (Form 1065)</span><span>${hoy} · SiFa v2</span>
+  </div>
+  </body></html>`;
+
+  const blob = new Blob([html],{type:'text/html'});
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url,'_blank');
+  if (!win) toast('Permite ventanas emergentes para exportar PDF','error');
+  else setTimeout(()=>{try{win.print();}catch(e){}},1000);
+  setTimeout(()=>URL.revokeObjectURL(url),20000);
+}
+
 // ═══ BADGES ═══
 function updateBadges() {
   document.getElementById('badge-clientes').textContent=clientes.length;
@@ -3087,6 +3831,7 @@ function updateBadges() {
   document.getElementById('badge-invoices').textContent=invoices.filter(x=>finTypes.includes(x.tipoKey)).length;
   document.getElementById('badge-documentos').textContent=invoices.filter(x=>!finTypes.includes(x.tipoKey)).length;
   document.getElementById('badge-calc').textContent=calculos.length;
+  document.getElementById('badge-gastos').textContent=gastos.length;
   document.getElementById('badge-empresas').textContent=Object.keys(getTodasEmpresas()).length;
 }
 
@@ -3106,11 +3851,11 @@ function abrirRecuperacion() {
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     // Buscar claves con datos relevantes
-    if (k.match(/(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos)$/)) {
+    if (k.match(/(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos|gastos)$/)) {
       try {
         const val = JSON.parse(localStorage.getItem(k));
         if (Array.isArray(val) && val.length > 0) {
-          claves.push({ clave: k, cantidad: val.length, tipo: k.split(/clientes|mercancias|facturas|pagos|invoices|calculos|anticipos/).pop() || k });
+          claves.push({ clave: k, cantidad: val.length, tipo: k.split(/clientes|mercancias|facturas|pagos|invoices|calculos|anticipos|gastos/).pop() || k });
         }
       } catch(e) {}
     }
@@ -3124,7 +3869,7 @@ function abrirRecuperacion() {
   // Agrupar por prefijo
   const prefijos = {};
   claves.forEach(c => {
-    const match = c.clave.match(/^(.+?)(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos)$/);
+    const match = c.clave.match(/^(.+?)(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos|gastos)$/);
     if (match) {
       const pre = match[1], tipo = match[2];
       if (!prefijos[pre]) prefijos[pre] = {};
@@ -3162,7 +3907,7 @@ function recuperarPrefijo(prefijo) {
   const dest = empresaActual.dbPrefix;
   if (prefijo === dest) { toast('El prefijo origen y destino son iguales', 'error'); return; }
 
-  const tipos = ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos'];
+  const tipos = ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos','gastos'];
   let recuperados = 0;
   tipos.forEach(t => {
     const val = localStorage.getItem(prefijo + t);
@@ -3199,7 +3944,7 @@ function exportarBackup() {
     const k = localStorage.key(i);
     // Incluir todo excepto claves del sistema de Chrome
     if (k && (k.startsWith('sys_') || k.startsWith('dal_') || k.startsWith('sifa_') ||
-        k.match(/(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos|inv_consec_)$/))) {
+        k.match(/(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos|gastos|inv_consec_)$/))) {
       try { backup.sistema[k] = JSON.parse(localStorage.getItem(k)); }
       catch(e) { backup.sistema[k] = localStorage.getItem(k); }
     }
@@ -3209,7 +3954,7 @@ function exportarBackup() {
   const todas = getTodasEmpresas();
   Object.values(todas).forEach(emp => {
     const p = emp.dbPrefix;
-    ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos'].forEach(t => {
+    ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos','gastos'].forEach(t => {
       const val = localStorage.getItem(p + t);
       if (val) {
         try { backup.sistema[p + t] = JSON.parse(val); }
@@ -3250,14 +3995,14 @@ function importarBackup(input) {
       const todas = getTodasEmpresas();
       Object.values(todas).forEach(emp => {
         const p = emp.dbPrefix;
-        ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos'].forEach(t => {
+        ['clientes','mercancias','facturas','pagos','invoices','calculos','anticipos','gastos'].forEach(t => {
           localStorage.removeItem(p + t);
         });
       });
 
       // También borrar del backup cualquier prefijo que aparezca
       Object.keys(backup.sistema).forEach(k => {
-        const match = k.match(/^(.+?)(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos)$/);
+        const match = k.match(/^(.+?)(clientes|mercancias|facturas|pagos|invoices|calculos|anticipos|gastos)$/);
         if (match) localStorage.removeItem(k);
       });
 
