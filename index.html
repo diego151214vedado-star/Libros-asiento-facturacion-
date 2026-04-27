@@ -573,7 +573,7 @@ if ('serviceWorker' in navigator) {
         <button class="btn btn-secondary btn-sm" onclick="abrirRecuperacion()" title="Recuperar datos de versiones anteriores">🔄 Recuperar datos</button>
         <button class="btn btn-secondary btn-sm" onclick="exportarBackup()" title="Descargar copia de seguridad">💾 Backup</button>
         <label for="inputImportBackup" class="btn btn-secondary btn-sm" style="cursor:pointer">📂 Restaurar</label>
-        <input type="file" id="inputImportBackup" accept=".json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+        <input type="file" id="inputImportBackup" accept=".json" style="position:fixed;top:-100px;left:-100px;width:1px;height:1px;opacity:0" onchange="importarBackup(this)">
         <button class="btn btn-primary" id="btnCompartirDash" onclick="compartirDashboard()">⬆️ Exportar PDF</button>
       </div>
     </div>
