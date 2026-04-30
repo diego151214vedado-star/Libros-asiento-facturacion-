@@ -472,11 +472,11 @@ if ('serviceWorker' in navigator) {
       <span class="badge" id="badge-pagos">0</span>
     </button>
     <button class="nav-tab" onclick="showSection('invoices')" id="tab-invoices">
-      <span class="nav-icon">📋</span><span class="nav-label">Facturas/Invoice</span>
+      <span class="nav-icon">📋</span><span class="nav-label">Doc. Primarios</span>
       <span class="badge" id="badge-invoices">0</span>
     </button>
     <button class="nav-tab" onclick="showSection('documentos')" id="tab-documentos">
-      <span class="nav-icon">📄</span><span class="nav-label">Documentos</span>
+      <span class="nav-icon">📄</span><span class="nav-label">Doc. Secundarios</span>
       <span class="badge" id="badge-documentos">0</span>
     </button>
 
@@ -634,12 +634,12 @@ if ('serviceWorker' in navigator) {
 
 
   <!-- INVOICES -->
-  <!-- FACTURAS / INVOICES (generan deuda) -->
+  <!-- DOCUMENTOS PRIMARIOS (generan deuda) -->
   <div class="section" id="section-invoices">
     <div class="page-header">
       <div>
         <div class="page-title">FACTURAS / <span>INVOICES</span></div>
-        <div class="page-sub">Documentos financieros — crean deuda y aparecen en cobros</div>
+        <div class="page-sub">Documentos financieros — crean deuda — contabilizables</div>
       </div>
       <button class="btn btn-primary" onclick="abrirNuevoDocFinanciero()">＋ Nueva Factura / Invoice</button>
     </div>
@@ -649,12 +649,12 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 
-  <!-- DOCUMENTOS COMPLEMENTARIOS (no generan deuda) -->
+  <!-- DOCUMENTOS SECUNDARIOS (no generan deuda) -->
   <div class="section" id="section-documentos">
     <div class="page-header">
       <div>
         <div class="page-title">DOCUMENTOS <span>COMPLEMENTARIOS</span></div>
-        <div class="page-sub">Conduces, órdenes de entrega y más — solo PDF, sin impacto financiero</div>
+        <div class="page-sub">Conduces, órdenes de entrega y más — sin impacto contable</div>
       </div>
       <button class="btn btn-primary" onclick="abrirNuevoDocComplementario()">＋ Nuevo Documento</button>
     </div>
@@ -1000,8 +1000,7 @@ if ('serviceWorker' in navigator) {
 
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('modalInvoice')">Cancelar</button>
-      <button class="btn btn-blue" onclick="guardarInvoice()">💾 Guardar</button>
-      <button class="btn btn-primary" onclick="generarInvoice()">📋 Generar PDF</button>
+      <button class="btn btn-primary" onclick="generarInvoice()">💾 Guardar e Imprimir</button>
     </div>
   </div>
 </div>
@@ -1336,8 +1335,8 @@ const _SECTION_TITLES = {
   mercancias:  'CATÁLOGO DE <span>PRODUCTOS</span>',
   facturas:    'REGISTRO DE <span>FACTURAS</span>',
   pagos:       'REGISTRO DE <span>COBROS</span>',
-  invoices:    'FACTURAS / <span>INVOICES</span>',
-  documentos:  'DOCUMENTOS <span>COMPLEMENTARIOS</span>',
+  invoices:    'DOCUMENTOS <span>PRIMARIOS</span>',
+  documentos:  'DOCUMENTOS <span>SECUNDARIOS</span>',
   calc:        'FORMACIÓN DE <span>PRECIOS</span>',
   empresas:    'SELECCIÓN DE <span>EMPRESA</span>',
 };
@@ -2181,7 +2180,7 @@ function generarInvoice() {
   abrirInvoicePDF(data); closeModal('modalInvoice');
 }
 
-// ── Render tabla Facturas/Invoices (solo financieros)
+// ── Render tabla Documentos Primarioss (solo financieros)
 function renderInvoices() {
   const tbody = document.getElementById('invoicesTable');
   const fin = invoices.filter(x => esFinanciero(x.tipoKey || 'I'));
@@ -2193,21 +2192,19 @@ function renderInvoices() {
     const c   = clientes.find(x => x.id === inv.clienteId);
     const emp = inv.emisora || empresaActual || {};
     const label = inv.titulo || getTipoLabel(inv.tipoKey || 'I');
-    // Buscar deuda vinculada
     const fVinc = facturas.find(f => f.invoiceId === inv.id);
     const saldo = fVinc ? getSaldo(fVinc.id) : null;
     const saldoHTML = saldo !== null
       ? `<span style="font-size:11px;color:${saldo<=0.01?'var(--green)':saldo>0?'var(--pink)':'var(--text2)'}">${saldo<=0.01?'✓ Pagado':fmtUSD(saldo)+' pendiente'}</span>`
       : '';
-    return `<tr>
+    return `<tr style="cursor:pointer" onclick="editInvoice('${inv.id}')">
       <td>${fmtDate(inv.fecha)}</td>
       <td class="mono">${inv.numero}</td>
       <td><span style="font-size:11px;font-weight:700;color:var(--blue)">${label}</span></td>
       <td style="font-size:12px">${emp.nombre||'—'}</td>
       <td>${c ? c.nombre : (inv.proveedor||'—')}<br>${saldoHTML}</td>
       <td class="mono amount-pos">${fmtUSD(inv.total)}</td>
-      <td style="white-space:nowrap">
-        <button class="btn btn-secondary btn-sm" onclick="editInvoice('${inv.id}')">✏️</button>
+      <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn btn-primary btn-sm" onclick="abrirInvoicePDF(invoices.find(x=>x.id==='${inv.id}'))">📋 PDF</button>
         <button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">✕</button>
       </td>
@@ -2215,7 +2212,7 @@ function renderInvoices() {
   }).join('');
 }
 
-// ── Render tabla Documentos complementarios (O, C y custom)
+// ── Render tabla Documentos Secundarios (O, C y custom)
 function renderDocumentos() {
   const tbody = document.getElementById('documentosTable');
   if (!tbody) return;
@@ -2228,14 +2225,13 @@ function renderDocumentos() {
     const c   = clientes.find(x => x.id === inv.clienteId);
     const emp = inv.emisora || empresaActual || {};
     const label = inv.titulo || getTipoLabel(inv.tipoKey || 'O');
-    return `<tr>
+    return `<tr style="cursor:pointer" onclick="editInvoice('${inv.id}')">
       <td>${fmtDate(inv.fecha)}</td>
       <td class="mono">${inv.numero}</td>
       <td><span style="font-size:11px;font-weight:700;color:var(--orange)">${label}</span></td>
       <td style="font-size:12px">${emp.nombre||'—'}</td>
       <td>${c ? c.nombre : (inv.proveedor||'—')}</td>
-      <td style="white-space:nowrap">
-        <button class="btn btn-secondary btn-sm" onclick="editInvoice('${inv.id}')">✏️</button>
+      <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn btn-primary btn-sm" onclick="abrirInvoicePDF(invoices.find(x=>x.id==='${inv.id}'))">📄 PDF</button>
         <button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">✕</button>
       </td>
