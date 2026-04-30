@@ -2153,7 +2153,11 @@ function guardarInvoice() {
 
 function generarInvoice() {
   const data = getInvoiceData(); if (!data) return;
-  const idx  = invoices.findIndex(x => x.id === data.id);
+
+  // Abrir ventana ANTES de cualquier operación async (evita bloqueo de popup)
+  const win = window.open('', '_blank');
+
+  const idx = invoices.findIndex(x => x.id === data.id);
   if (idx >= 0) invoices[idx] = data; else invoices.push(data);
   saveConsecutivo(data.numero);
 
@@ -2177,7 +2181,15 @@ function generarInvoice() {
 
   delete document.getElementById('inv_id').dataset.facturaOrigen;
   saveInvoicesDB(); renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
-  abrirInvoicePDF(data); closeModal('modalInvoice');
+  closeModal('modalInvoice');
+  toast('✅ Documento guardado');
+
+  // Escribir PDF en la ventana ya abierta
+  if (win) {
+    abrirInvoicePDFEnVentana(data, win);
+  } else {
+    toast('Permite ventanas emergentes para imprimir', 'error');
+  }
 }
 
 // ── Render tabla Documentos Primarioss (solo financieros)
@@ -2379,6 +2391,12 @@ function numeroALetras(numero, moneda) {
 }
 
 function abrirInvoicePDF(data) {
+  const win = window.open('', '_blank');
+  if (!win) { toast('Permite ventanas emergentes para imprimir', 'error'); return; }
+  abrirInvoicePDFEnVentana(data, win);
+}
+
+function abrirInvoicePDFEnVentana(data, win) {
   const c   = data.cliente || clientes.find(x => x.id === data.clienteId);
   const emp = data.emisora || empresaActual || {};
   const pc  = emp.colorPrimary   || '#6366F1';
@@ -2544,12 +2562,11 @@ ${notasBlock}
 
 </body></html>`;
 
-  const blob = new Blob([html], {type:'text/html'});
-  const url  = URL.createObjectURL(blob);
-  const win  = window.open(url, '_blank');
-  if (!win) toast('Permite ventanas emergentes', 'error');
-  else setTimeout(() => { try { win.print(); } catch(e) {} }, 1200);
-  setTimeout(() => URL.revokeObjectURL(url), 20000);
+  // Escribir directamente en la ventana ya abierta (no abrir una nueva)
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => { try { win.print(); } catch(e) {} }, 1200);
 }
 
 function onSelectConsignatario() {
