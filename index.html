@@ -811,7 +811,7 @@ if ('serviceWorker' in navigator) {
     <div class="form-row">
       <div class="form-group"><label>Fecha *</label><input type="date" id="inv_fecha"></div>
       <div class="form-group"><label>Moneda</label>
-        <select id="inv_moneda" onchange="calcTotales();[1,2,3,4].forEach(calcLinea)"><option value="USD">USD — Dólar</option><option value="EUR">EUR — Euro</option><option value="CUP">CUP — Peso Cubano</option><option value="MLC">MLC — Moneda Libremente Convertible</option></select>
+        <select id="inv_moneda" onchange="calcTotales();[1,2,3,4,5,6,7,8,9,10].forEach(calcLinea)"><option value="USD">USD — Dólar</option><option value="EUR">EUR — Euro</option><option value="CUP">CUP — Peso Cubano</option><option value="MLC">MLC — Moneda Libremente Convertible</option></select>
       </div>
     </div>
 
@@ -823,7 +823,13 @@ if ('serviceWorker' in navigator) {
       </div>
       <div class="form-group">
         <label>Proveedor</label>
-        <input type="text" id="inv_proveedor" placeholder="Nombre del proveedor (opcional)">
+        <select id="inv_proveedor_sel" onchange="onSelectProveedor()" style="margin-bottom:6px">
+          <option value="">— Ninguno —</option>
+          <option value="1183">1183 — Mercado AZ</option>
+          <option value="1184">1184 — Mercado AZ</option>
+          <option value="__nuevo__">＋ Escribir nuevo...</option>
+        </select>
+        <input type="text" id="inv_proveedor" placeholder="Escribe el proveedor..." style="display:none">
       </div>
     </div>
 
@@ -890,6 +896,54 @@ if ('serviceWorker' in navigator) {
             <td style="padding:3px"><input type="number" id="inv_qty_4" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0" step="0.001" oninput="calcLinea(4)"></td>
             <td style="padding:3px"><input type="number" id="inv_price_4" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0.00" step="0.01" oninput="calcLinea(4)"></td>
             <td style="padding:3px;text-align:right;font-weight:600;color:var(--green)" id="inv_imp_4">—</td>
+          </tr>
+          <tr id="inv_lin_5">
+            <td style="padding:3px"><select id="inv_prod_5" style="width:100%;padding:5px;font-size:12px" onchange="onSelectProd(5)"><option value="">— Producto —</option></select></td>
+            <td style="padding:3px"><input type="text" id="inv_cod_5" style="width:100%;padding:5px;font-size:11px;font-family:monospace" placeholder="—"></td>
+            <td style="padding:3px"><input type="text" id="inv_um_5" style="width:100%;padding:5px;font-size:12px;text-align:center" placeholder="KG"></td>
+            <td style="padding:3px"><input type="number" id="inv_qty_5" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0" step="0.001" oninput="calcLinea(5)"></td>
+            <td style="padding:3px"><input type="number" id="inv_price_5" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0.00" step="0.01" oninput="calcLinea(5)"></td>
+            <td style="padding:3px;text-align:right;font-weight:600;color:var(--green)" id="inv_imp_5">—</td>
+          </tr>
+          <tr id="inv_lin_6">
+            <td style="padding:3px"><select id="inv_prod_6" style="width:100%;padding:5px;font-size:12px" onchange="onSelectProd(6)"><option value="">— Producto —</option></select></td>
+            <td style="padding:3px"><input type="text" id="inv_cod_6" style="width:100%;padding:5px;font-size:11px;font-family:monospace" placeholder="—"></td>
+            <td style="padding:3px"><input type="text" id="inv_um_6" style="width:100%;padding:5px;font-size:12px;text-align:center" placeholder="KG"></td>
+            <td style="padding:3px"><input type="number" id="inv_qty_6" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0" step="0.001" oninput="calcLinea(6)"></td>
+            <td style="padding:3px"><input type="number" id="inv_price_6" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0.00" step="0.01" oninput="calcLinea(6)"></td>
+            <td style="padding:3px;text-align:right;font-weight:600;color:var(--green)" id="inv_imp_6">—</td>
+          </tr>
+          <tr id="inv_lin_7">
+            <td style="padding:3px"><select id="inv_prod_7" style="width:100%;padding:5px;font-size:12px" onchange="onSelectProd(7)"><option value="">— Producto —</option></select></td>
+            <td style="padding:3px"><input type="text" id="inv_cod_7" style="width:100%;padding:5px;font-size:11px;font-family:monospace" placeholder="—"></td>
+            <td style="padding:3px"><input type="text" id="inv_um_7" style="width:100%;padding:5px;font-size:12px;text-align:center" placeholder="KG"></td>
+            <td style="padding:3px"><input type="number" id="inv_qty_7" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0" step="0.001" oninput="calcLinea(7)"></td>
+            <td style="padding:3px"><input type="number" id="inv_price_7" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0.00" step="0.01" oninput="calcLinea(7)"></td>
+            <td style="padding:3px;text-align:right;font-weight:600;color:var(--green)" id="inv_imp_7">—</td>
+          </tr>
+          <tr id="inv_lin_8">
+            <td style="padding:3px"><select id="inv_prod_8" style="width:100%;padding:5px;font-size:12px" onchange="onSelectProd(8)"><option value="">— Producto —</option></select></td>
+            <td style="padding:3px"><input type="text" id="inv_cod_8" style="width:100%;padding:5px;font-size:11px;font-family:monospace" placeholder="—"></td>
+            <td style="padding:3px"><input type="text" id="inv_um_8" style="width:100%;padding:5px;font-size:12px;text-align:center" placeholder="KG"></td>
+            <td style="padding:3px"><input type="number" id="inv_qty_8" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0" step="0.001" oninput="calcLinea(8)"></td>
+            <td style="padding:3px"><input type="number" id="inv_price_8" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0.00" step="0.01" oninput="calcLinea(8)"></td>
+            <td style="padding:3px;text-align:right;font-weight:600;color:var(--green)" id="inv_imp_8">—</td>
+          </tr>
+          <tr id="inv_lin_9">
+            <td style="padding:3px"><select id="inv_prod_9" style="width:100%;padding:5px;font-size:12px" onchange="onSelectProd(9)"><option value="">— Producto —</option></select></td>
+            <td style="padding:3px"><input type="text" id="inv_cod_9" style="width:100%;padding:5px;font-size:11px;font-family:monospace" placeholder="—"></td>
+            <td style="padding:3px"><input type="text" id="inv_um_9" style="width:100%;padding:5px;font-size:12px;text-align:center" placeholder="KG"></td>
+            <td style="padding:3px"><input type="number" id="inv_qty_9" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0" step="0.001" oninput="calcLinea(9)"></td>
+            <td style="padding:3px"><input type="number" id="inv_price_9" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0.00" step="0.01" oninput="calcLinea(9)"></td>
+            <td style="padding:3px;text-align:right;font-weight:600;color:var(--green)" id="inv_imp_9">—</td>
+          </tr>
+          <tr id="inv_lin_10">
+            <td style="padding:3px"><select id="inv_prod_10" style="width:100%;padding:5px;font-size:12px" onchange="onSelectProd(10)"><option value="">— Producto —</option></select></td>
+            <td style="padding:3px"><input type="text" id="inv_cod_10" style="width:100%;padding:5px;font-size:11px;font-family:monospace" placeholder="—"></td>
+            <td style="padding:3px"><input type="text" id="inv_um_10" style="width:100%;padding:5px;font-size:12px;text-align:center" placeholder="KG"></td>
+            <td style="padding:3px"><input type="number" id="inv_qty_10" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0" step="0.001" oninput="calcLinea(10)"></td>
+            <td style="padding:3px"><input type="number" id="inv_price_10" style="width:100%;padding:5px;font-size:12px;text-align:right" placeholder="0.00" step="0.01" oninput="calcLinea(10)"></td>
+            <td style="padding:3px;text-align:right;font-weight:600;color:var(--green)" id="inv_imp_10">—</td>
           </tr>
         </tbody>
       </table>
@@ -1448,7 +1502,7 @@ function saveMercancia() {
     const linea = window._invLineaPendiente;
     window._invLineaPendiente = null;
     // Actualizar selectores del invoice
-    [1,2,3,4].forEach(n => {
+    [1,2,3,4,5,6,7,8,9,10].forEach(n => {
       const sel = document.getElementById('inv_prod_' + n);
       if (!sel) return;
       const cur = sel.value;
@@ -1872,7 +1926,7 @@ function populateInvoiceModal() {
   // Clientes y productos
   document.getElementById('inv_cliente').innerHTML = '<option value="">— Selecciona o deja vacío —</option>' +
     clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
-  [1,2,3,4].forEach(i => {
+  [1,2,3,4,5,6,7,8,9,10].forEach(i => {
     document.getElementById('inv_prod_' + i).innerHTML = '<option value="">— Producto —</option>' +
       mercancias.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('') +
       '<option value="__nuevo__" style="color:var(--green);font-weight:700">＋ Crear nuevo producto...</option>';
@@ -1888,6 +1942,8 @@ function populateInvoiceModal() {
    'inv_origen','inv_puerto','inv_notas','inv_entregado_por'].forEach(id => {
     document.getElementById(id).value = '';
   });
+  document.getElementById('inv_proveedor').style.display = 'none';
+  document.getElementById('inv_proveedor_sel').value = '';
   document.getElementById('inv_incoterm').value = '';
   document.getElementById('inv_condicion_sel').value = '';
   document.getElementById('inv_condicion').value = '';
@@ -1908,6 +1964,19 @@ function onSelectInvoiceCliente() {
   document.getElementById('inv_cli_cif').textContent = c.cif || '—';
   document.getElementById('inv_cli_dir').textContent = c.direccion || '—';
   info.style.display = 'block';
+}
+
+function onSelectProveedor() {
+  const val = document.getElementById('inv_proveedor_sel').value;
+  const inp = document.getElementById('inv_proveedor');
+  if (val === '__nuevo__') {
+    inp.style.display = 'block';
+    inp.value = '';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    inp.value = val; // guardar el valor del selector en el input oculto
+  }
 }
 
 function onSelectProd(i) {
@@ -1947,7 +2016,7 @@ function calcLinea(i) {
 
 function calcTotales() {
   let sub = 0;
-  [1,2,3,4].forEach(i => {
+  [1,2,3,4,5,6,7,8,9,10].forEach(i => {
     sub += (parseFloat(document.getElementById('inv_qty_'   + i).value) || 0) *
            (parseFloat(document.getElementById('inv_price_' + i).value) || 0);
   });
@@ -1976,7 +2045,7 @@ function getInvoiceData() {
   const emisora    = getTodasEmpresas()[emisoraKey] || empresaActual || null;
 
   const lineas = [];
-  [1,2,3,4].forEach(i => {
+  [1,2,3,4,5,6,7,8,9,10].forEach(i => {
     const pid   = document.getElementById('inv_prod_'  + i).value;
     const qty   = parseFloat(document.getElementById('inv_qty_'   + i).value) || 0;
     const price = parseFloat(document.getElementById('inv_price_' + i).value) || 0;
@@ -2186,6 +2255,21 @@ function editInvoice(id) {
   document.getElementById('inv_moneda').value= inv.moneda  || 'USD';
   document.getElementById('inv_cliente').value = inv.clienteId || '';
   document.getElementById('inv_proveedor').value = inv.proveedor || '';
+  // Restaurar selector de proveedor
+  const provSel = document.getElementById('inv_proveedor_sel');
+  const provInp = document.getElementById('inv_proveedor');
+  const provVal = inv.proveedor || '';
+  if (provVal === '1183' || provVal === '1184') {
+    provSel.value = provVal;
+    provInp.style.display = 'none';
+  } else if (provVal) {
+    provSel.value = '__nuevo__';
+    provInp.style.display = 'block';
+    provInp.value = provVal;
+  } else {
+    provSel.value = '';
+    provInp.style.display = 'none';
+  }
   document.getElementById('inv_flete').value = inv.flete   || '0';
   document.getElementById('inv_seguro').value= inv.seguro  || '0';
   document.getElementById('inv_origen').value= inv.origen  || '';
@@ -2195,11 +2279,21 @@ function editInvoice(id) {
   document.getElementById('inv_notas').value = inv.notas   || '';
   document.getElementById('inv_entregado_por').value = inv.entregadoPor || '';
   if(inv.clienteId) onSelectInvoiceCliente();
-  // Líneas
+  // Líneas — restaurar con fallback si el producto no está en el catálogo actual
   (inv.lineas||[]).forEach((l,i) => {
-    if(i>=4) return;
+    if(i>=10) return;
     const n=i+1;
-    document.getElementById('inv_prod_'+n).value  = l.prodId||'';
+    const sel = document.getElementById('inv_prod_'+n);
+    // Intentar seleccionar por ID
+    sel.value = l.prodId || '';
+    // Si no encontró el producto (value quedó vacío pero había prodId), agregar opción temporal
+    if (l.prodId && sel.value !== l.prodId) {
+      const opt = document.createElement('option');
+      opt.value = l.prodId;
+      opt.textContent = l.nombre || l.prodId;
+      sel.insertBefore(opt, sel.firstChild);
+      sel.value = l.prodId;
+    }
     document.getElementById('inv_cod_'+n).value   = l.codigo||'';
     document.getElementById('inv_um_'+n).value    = l.um||'';
     document.getElementById('inv_qty_'+n).value   = l.qty||'';
