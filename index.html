@@ -300,16 +300,52 @@ if ('serviceWorker' in navigator) {
   .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 2px; line-height: 1; }
   .page-title span { color: var(--red); }
   .page-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
-  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; font-family: 'DM Sans', sans-serif; letter-spacing: .3px; }
-  .btn-primary { background: var(--red); color: white; }
-  .btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); }
-  .btn-secondary { background: var(--surface3); color: var(--text); border: 1px solid var(--border); }
-  .btn-secondary:hover { background: var(--surface2); }
-  .btn-blue { background: var(--blue); color: white; }
-  .btn-blue:hover { background: var(--blue-dark); transform: translateY(-1px); }
-  .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 8px; }
-  .btn-danger { background: transparent; color: var(--pink); border: 1px solid var(--pink); }
-  .btn-danger:hover { background: rgba(255,107,107,.1); }
+  /* ── BOTONES 3D ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; border-radius: 12px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    border: none; font-family: 'DM Sans', sans-serif; letter-spacing: .3px;
+    position: relative; user-select: none;
+    transition: transform .1s, box-shadow .1s, filter .1s;
+  }
+  .btn:active { transform: translateY(3px) !important; }
+
+  .btn-primary {
+    color: white;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--red) 78%, white 22%) 0%, var(--red) 55%, var(--red-dark) 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 -1px 0 rgba(0,0,0,.25) inset, 0 4px 0 var(--red-dark), 0 6px 12px rgba(0,0,0,.4);
+  }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-primary:active { box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 -1px 0 rgba(0,0,0,.25) inset, 0 1px 0 var(--red-dark), 0 2px 6px rgba(0,0,0,.4); }
+
+  .btn-secondary {
+    color: var(--text);
+    background: linear-gradient(180deg, #2E2E3E 0%, var(--surface3) 55%, #18181F 100%);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 -1px 0 rgba(0,0,0,.3) inset, 0 4px 0 #0D0D12, 0 6px 12px rgba(0,0,0,.4);
+  }
+  .btn-secondary:hover { filter: brightness(1.12); transform: translateY(-1px); }
+  .btn-secondary:active { box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 -1px 0 rgba(0,0,0,.3) inset, 0 1px 0 #0D0D12, 0 2px 6px rgba(0,0,0,.4); }
+
+  .btn-blue {
+    color: white;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--blue) 78%, white 22%) 0%, var(--blue) 55%, var(--blue-dark) 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 -1px 0 rgba(0,0,0,.25) inset, 0 4px 0 var(--blue-dark), 0 6px 12px rgba(0,0,0,.4);
+  }
+  .btn-blue:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-blue:active { box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 -1px 0 rgba(0,0,0,.25) inset, 0 1px 0 var(--blue-dark), 0 2px 6px rgba(0,0,0,.4); }
+
+  .btn-danger {
+    color: var(--pink);
+    background: linear-gradient(180deg, #2A1A1A 0%, #1E1212 100%);
+    border: 1px solid var(--pink);
+    box-shadow: 0 1px 0 rgba(255,107,107,.12) inset, 0 4px 0 #0D0508, 0 6px 12px rgba(0,0,0,.4);
+  }
+  .btn-danger:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn-danger:active { box-shadow: 0 1px 0 rgba(255,107,107,.12) inset, 0 1px 0 #0D0508, 0 2px 6px rgba(0,0,0,.4); }
+
+  .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 9px; }
   /* ── LISTAS DE FILAS (reemplaza cards-grid) ── */
   .cards-grid { display: flex; flex-direction: column; gap: 0; margin-bottom: 24px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
   .list-row {
@@ -1088,7 +1124,7 @@ if ('serviceWorker' in navigator) {
     <div style="background:var(--surface2);border-radius:14px;padding:20px;margin-bottom:20px">
       <div class="section-label" style="margin-bottom:14px">① Logotipo</div>
       <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
-        <div id="emp_logo_preview" style="width:120px;height:80px;background:var(--surface3);border:2px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;overflow:hidden">🏢</div>
+        <div id="emp_logo_preview" style="width:120px;height:80px;background:repeating-conic-gradient(#1A1A24 0% 25%,#22222E 0% 50%) 0/16px 16px;border:2px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;overflow:hidden">🏢</div>
         <div style="flex:1;min-width:180px">
           <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">Sube el logo de la empresa. Los colores del tema se detectan automáticamente.</div>
           <div style="display:flex;gap:8px;align-items:center">
@@ -1805,7 +1841,7 @@ function _abrirVentanaConciliacion(clienteId,desde,hasta) {
   const nTxt=sf>0.01?`Estimado cliente <strong>${cliente.nombre}</strong>, presenta un saldo pendiente de <strong>${fmtUSD(sf)}</strong>. Le agradecemos gestionar su pago a la brevedad.`:sf<-0.01?`Estimado cliente <strong>${cliente.nombre}</strong>, tiene un crédito de <strong>${fmtUSD(Math.abs(sf))}</strong>.`:`Estimado cliente <strong>${cliente.nombre}</strong>, su cuenta se encuentra completamente al día.`;
   const pc1=empresaActual?empresaActual.colorPrimary:'#E8202A';
   const logoH=empresaActual&&empresaActual.logo?`<img src="${empresaActual.logo}" style="height:38px;object-fit:contain">`:`<div style="font-size:16px;font-weight:900"><span style="color:${pc1}">${empresaActual?empresaActual.nombre.split(' ')[0]:'DAL'}</span> ${empresaActual?empresaActual.nombre.split(' ').slice(1).join(' '):'MIAMI EXPORT LLC'}</div>`;
-  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Estado de Cuenta - ${cliente.nombre}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1a1a2e;background:#fff;padding:28px}@media print{body{padding:0}}</style></head><body><div style="border-bottom:3px solid ${pc1};padding-bottom:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start"><div>${logoH}<div style="font-size:9px;color:#666;margin-top:4px;line-height:1.7">${empresaActual?empresaActual.direccion+' · '+empresaActual.ein:''}</div></div><div style="text-align:right"><div style="font-size:12px;font-weight:700;color:${pc1}">ESTADO DE CUENTA</div><div style="font-size:9px;color:#888;margin-top:3px">${hoy}</div></div></div><div style="background:#f5f5f5;border-left:4px solid ${pc1};padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:2px">Cliente</div><div style="font-size:17px;font-weight:700">${cliente.nombre}</div></div><table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#1a1a2e;color:#fff"><th style="padding:8px;text-align:left;font-size:9px">FECHA</th><th style="padding:8px;text-align:left;font-size:9px">TIPO</th><th style="padding:8px;text-align:left;font-size:9px">REF.</th><th style="padding:8px;text-align:left;font-size:9px">DESCRIPCIÓN</th><th style="padding:8px;text-align:right;font-size:9px">MONTO</th><th style="padding:8px;text-align:right;font-size:9px">SALDO</th></tr></thead><tbody>${filasHTML}</tbody></table><div style="display:flex;gap:10px;margin-bottom:16px"><div style="flex:1;border:1px solid #e0e0e8;border-radius:6px;padding:10px;text-align:center"><div style="font-size:8px;text-transform:uppercase;color:#888;margin-bottom:3px">Total Facturado</div><div style="font-size:13px;font-weight:700;color:#1A3CCC">${fmtUSD(totalF)}</div></div><div style="flex:1;border:1px solid #e0e0e8;border-radius:6px;padding:10px;text-align:center"><div style="font-size:8px;text-transform:uppercase;color:#888;margin-bottom:3px">Total Pagado</div><div style="font-size:13px;font-weight:700;color:#16a34a">${fmtUSD(totalP)}</div></div><div style="flex:1;border:1px solid #e0e0e8;border-radius:6px;padding:10px;text-align:center"><div style="font-size:8px;text-transform:uppercase;color:#888;margin-bottom:3px">${sf>0.01?'Saldo a Pagar':sf<-0.01?'Saldo a Favor':'Saldo'}</div><div style="font-size:13px;font-weight:700;color:${sf>0.01?'#dc2626':sf<-0.01?'#16a34a':'#1A3CCC'}">${fmtUSD(Math.abs(sf))}</div></div></div><div style="background:${nBg};border-left:4px solid ${nBorder};padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:16px;font-size:11px;line-height:1.7">${nTxt}</div><div style="border-top:1px solid #e0e0e8;padding-top:10px;display:flex;justify-content:space-between;align-items:flex-end"><div><div style="width:140px;border-bottom:1px solid #aaa;margin-bottom:3px;height:20px"></div><div style="font-weight:700;font-size:10px">${empresaActual?empresaActual.gerente:''}</div><div style="font-size:8px;color:#888;text-transform:uppercase">${empresaActual?empresaActual.cargoGerente:''}</div></div><div style="text-align:right;font-size:9px;color:#555;line-height:1.9">${hoy}<br>${empresaActual?empresaActual.ein:''}${empresaActual&&empresaActual.banco?'<br>'+empresaActual.banco:''}</div></div></body></html>`;
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Estado de Cuenta - ${cliente.nombre}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1a1a2e;background:#f0f0f0;font-size:11px}#doc-sheet{background:#fff;max-width:800px;margin:70px auto 40px;padding:28px;box-shadow:0 2px 16px rgba(0,0,0,.15)}#action-bar{position:fixed;top:0;left:0;right:0;height:56px;background:#1a1a2e;border-bottom:3px solid ${pc1};display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:999;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.4)}.ab-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:Arial,sans-serif;white-space:nowrap;flex-shrink:0}.ab-print{background:${pc1};color:#fff}.ab-print:hover{opacity:.88}.ab-close{background:transparent;color:#aaa;border:1px solid #444}.ab-close:hover{background:#333;color:#fff}.doc-ref{color:#fff;font-size:13px;font-weight:700}@media print{#action-bar{display:none}body{background:#fff}#doc-sheet{margin:0;padding:0;box-shadow:none;max-width:none}}</style></head><body><div id="action-bar"><div class="doc-ref">Estado de Cuenta — ${cliente.nombre}</div><div style="display:flex;gap:8px"><button class="ab-btn ab-print" onclick="window.print()">🖨️ Imprimir / PDF</button><button class="ab-btn ab-close" onclick="window.close()">✕ Cerrar</button></div></div><div id="doc-sheet"><div style="border-bottom:3px solid ${pc1};padding-bottom:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start"><div>${logoH}<div style="font-size:9px;color:#666;margin-top:4px;line-height:1.7">${empresaActual?empresaActual.direccion+' · '+empresaActual.ein:''}</div></div><div style="text-align:right"><div style="font-size:12px;font-weight:700;color:${pc1}">ESTADO DE CUENTA</div><div style="font-size:9px;color:#888;margin-top:3px">${hoy}</div></div></div><div style="background:#f5f5f5;border-left:4px solid ${pc1};padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:2px">Cliente</div><div style="font-size:17px;font-weight:700">${cliente.nombre}</div></div><table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#1a1a2e;color:#fff"><th style="padding:8px;text-align:left;font-size:9px">FECHA</th><th style="padding:8px;text-align:left;font-size:9px">TIPO</th><th style="padding:8px;text-align:left;font-size:9px">REF.</th><th style="padding:8px;text-align:left;font-size:9px">DESCRIPCIÓN</th><th style="padding:8px;text-align:right;font-size:9px">MONTO</th><th style="padding:8px;text-align:right;font-size:9px">SALDO</th></tr></thead><tbody>${filasHTML}</tbody></table><div style="display:flex;gap:10px;margin-bottom:16px"><div style="flex:1;border:1px solid #e0e0e8;border-radius:6px;padding:10px;text-align:center"><div style="font-size:8px;text-transform:uppercase;color:#888;margin-bottom:3px">Total Facturado</div><div style="font-size:13px;font-weight:700;color:#1A3CCC">${fmtUSD(totalF)}</div></div><div style="flex:1;border:1px solid #e0e0e8;border-radius:6px;padding:10px;text-align:center"><div style="font-size:8px;text-transform:uppercase;color:#888;margin-bottom:3px">Total Pagado</div><div style="font-size:13px;font-weight:700;color:#16a34a">${fmtUSD(totalP)}</div></div><div style="flex:1;border:1px solid #e0e0e8;border-radius:6px;padding:10px;text-align:center"><div style="font-size:8px;text-transform:uppercase;color:#888;margin-bottom:3px">${sf>0.01?'Saldo a Pagar':sf<-0.01?'Saldo a Favor':'Saldo'}</div><div style="font-size:13px;font-weight:700;color:${sf>0.01?'#dc2626':sf<-0.01?'#16a34a':'#1A3CCC'}">${fmtUSD(Math.abs(sf))}</div></div></div><div style="background:${nBg};border-left:4px solid ${nBorder};padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:16px;font-size:11px;line-height:1.7">${nTxt}</div><div style="border-top:1px solid #e0e0e8;padding-top:10px;display:flex;justify-content:space-between;align-items:flex-end"><div><div style="width:140px;border-bottom:1px solid #aaa;margin-bottom:3px;height:20px"></div><div style="font-weight:700;font-size:10px">${empresaActual?empresaActual.gerente:''}</div><div style="font-size:8px;color:#888;text-transform:uppercase">${empresaActual?empresaActual.cargoGerente:''}</div></div><div style="text-align:right;font-size:9px;color:#555;line-height:1.9">${hoy}<br>${empresaActual?empresaActual.ein:''}${empresaActual&&empresaActual.banco?'<br>'+empresaActual.banco:''}</div></div></div></body></html>`;
   const blob=new Blob([html],{type:'text/html'}), url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener';
   document.body.appendChild(a); a.click(); setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},10000);
@@ -2508,23 +2544,48 @@ function abrirInvoicePDFEnVentana(data, win) {
 <title>${data.titulo} ${data.numero}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,sans-serif;color:#1a1a1a;background:#fff;padding:14px;font-size:10px}
+body{font-family:Arial,sans-serif;color:#1a1a1a;background:#f0f0f0;font-size:10px}
+#doc-sheet{background:#fff;max-width:800px;margin:70px auto 40px;padding:20px;box-shadow:0 2px 16px rgba(0,0,0,.15)}
 table{font-size:10px}
+#action-bar{
+  position:fixed;top:0;left:0;right:0;height:56px;
+  background:#1a1a2e;border-bottom:3px solid ${pc};
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;z-index:999;gap:12px;
+  box-shadow:0 2px 12px rgba(0,0,0,.4);
+}
+#action-bar .doc-ref{color:#fff;font-size:13px;font-weight:700;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#action-bar .doc-ref span{color:${pc}}
+.ab-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 18px;border-radius:8px;font-size:13px;
+  font-weight:700;cursor:pointer;border:none;
+  font-family:Arial,sans-serif;white-space:nowrap;flex-shrink:0;
+}
+.ab-print{background:${pc};color:#fff}
+.ab-print:hover{opacity:.88}
+.ab-close{background:transparent;color:#aaa;border:1px solid #444}
+.ab-close:hover{background:#333;color:#fff}
 @media print{
-  body{padding:6px}
-  @page{
-    margin:0.7cm;
-    size:A4;
-    /* Ocultar encabezado y pie del navegador */
-    marks: none;
-  }
-  /* Chrome/Edge: ocultar URL en pie */
-  html { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  /* Evitar que el navegador añada URL */
-  body::after { content: none !important; }
+  #action-bar{display:none}
+  body{background:#fff}
+  #doc-sheet{margin:0;padding:6px;box-shadow:none;max-width:none}
+  @page{margin:0.7cm;size:A4;marks:none}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 </style>
 </head><body>
+
+<!-- BARRA DE ACCIONES (se oculta al imprimir) -->
+<div id="action-bar">
+  <div class="doc-ref">SiFa &nbsp;·&nbsp; <span>${data.titulo}</span> ${data.numero}</div>
+  <div style="display:flex;gap:8px">
+    <button class="ab-btn ab-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    <button class="ab-btn ab-close" onclick="window.close()">✕ Cerrar</button>
+  </div>
+</div>
+
+<div id="doc-sheet">
 
 <!-- HEADER -->
 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-bottom:8px;border-bottom:3px solid ${pc}">
@@ -2618,13 +2679,15 @@ ${notasBlock}
 
 </div>
 
+</div><!-- /doc-sheet -->
+
 </body></html>`;
 
   // Escribir directamente en la ventana ya abierta (no abrir una nueva)
   win.document.open();
   win.document.write(html);
   win.document.close();
-  setTimeout(() => { try { win.print(); } catch(e) {} }, 1200);
+  // No auto-print: el usuario usa el botón de la barra
 }
 
 function onSelectConsignatario() {
@@ -2806,7 +2869,7 @@ function previewLogo() {
   reader.onload = (e) => {
     _logoBase64 = e.target.result;
     document.getElementById('emp_logo_preview').innerHTML =
-      `<img src="${_logoBase64}" style="width:100%;height:100%;object-fit:contain">`;
+      `<img src="${_logoBase64}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))">`;
     document.getElementById('emp_palette_label').textContent = 'Analizando colores…';
     const img = new Image();
     img.onload = () => {
@@ -2899,7 +2962,11 @@ function generarCunoSVG(empNombre, logoBase64, colorPrimary) {
   }).join('');
 
   const logoContent = logoBase64
-    ? `<image href="${logoBase64}" x="${cx-28}" y="${cy-28}" width="56" height="56" preserveAspectRatio="xMidYMid meet"/>`
+    ? `<defs><clipPath id="logoClip"><circle cx="${cx}" cy="${cy}" r="${r-16}"/></clipPath></defs>
+       <image href="${logoBase64}" x="${cx-30}" y="${cy-30}" width="60" height="60"
+         preserveAspectRatio="xMidYMid meet"
+         clip-path="url(#logoClip)"
+         style="mix-blend-mode:multiply"/>`
     : `<text x="${cx}" y="${cy+8}" font-family="'Bebas Neue',Arial Black,sans-serif" font-size="22"
         fill="${pc}" text-anchor="middle" font-weight="900">${nombre.slice(0,3)}</text>`;
 
@@ -2986,7 +3053,7 @@ function prepareModalEmpresa(key) {
     const emp = getEmpresa(key); if (!emp) return;
     _logoBase64 = emp.logo || null;
     if (emp.logo) document.getElementById('emp_logo_preview').innerHTML =
-      `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain">`;
+      `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))">`;
 
     const fields = {
       emp_nombre:'nombre', emp_sub:'sub', emp_ein:'ein', emp_prefix:'dbPrefix',
@@ -3174,7 +3241,7 @@ function renderEmpresas() {
     const sc = emp.colorSecondary || '#0EA5E9';
     const ac = emp.colorAccent    || '#22C55E';
     const logoHTML = emp.logo
-      ? `<img src="${emp.logo}" style="width:110px;height:72px;object-fit:contain;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4))">`
+      ? `<img src="${emp.logo}" style="width:110px;height:72px;object-fit:contain;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));mix-blend-mode:normal;background:transparent">`
       : `<div style="width:80px;height:56px;background:linear-gradient(135deg,${pc},${sc});border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:16px;box-shadow:0 6px 20px ${pc}44">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
     const dots = `<div style="display:flex;gap:5px;justify-content:center;margin-top:10px"><span style="width:8px;height:8px;border-radius:50%;background:${pc};display:inline-block"></span><span style="width:8px;height:8px;border-radius:50%;background:${sc};display:inline-block"></span><span style="width:8px;height:8px;border-radius:50%;background:${ac};display:inline-block"></span></div>`;
     const nota = isActiva
@@ -3202,7 +3269,7 @@ function rebuildEmpresaSelector() {
     const isActiva=key===actKey;
     const pc=emp.colorPrimary||'#6366F1', sc=emp.colorSecondary||'#0EA5E9', ac=emp.colorAccent||'#22C55E';
     const logoHTML=emp.logo
-      ?`<img src="${emp.logo}" style="width:100px;height:66px;object-fit:contain;margin-bottom:12px">`
+      ?`<img src="${emp.logo}" style="width:100px;height:66px;object-fit:contain;margin-bottom:12px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5));background:transparent">`
       :`<div style="width:72px;height:50px;background:linear-gradient(135deg,${pc},${sc});border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:12px">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
     const dots=`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${pc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${sc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${ac}"></span>`;
     return `<div class="empresa-card" onclick="seleccionarEmpresaDirecta('${key}')"
@@ -3243,8 +3310,8 @@ function applyEmpresaTheme(emp) {
   if (empSub)    empSub.textContent    = emp.ein || emp.sub || '';
   if (empLogo) {
     if (emp.logo) {
-      empLogo.innerHTML = `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:5px">`;
-      empLogo.style.background = '#0A0A0F';
+      empLogo.innerHTML = `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,.6))">`;
+      empLogo.style.background = 'transparent';
     } else {
       empLogo.innerHTML = emp.nombre.split(' ').map(w=>w[0]).slice(0,2).join('');
       empLogo.style.background = `linear-gradient(135deg,${pc},${sc})`;
