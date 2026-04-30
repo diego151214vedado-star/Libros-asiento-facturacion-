@@ -2152,9 +2152,10 @@ function guardarInvoice() {
 }
 
 function generarInvoice() {
+  // Validar primero sin abrir ventana
   const data = getInvoiceData(); if (!data) return;
 
-  // Abrir ventana ANTES de cualquier operación async (evita bloqueo de popup)
+  // Abrir ventana INMEDIATAMENTE tras validación exitosa (evita bloqueo de popup)
   const win = window.open('', '_blank');
 
   const idx = invoices.findIndex(x => x.id === data.id);
@@ -2184,12 +2185,39 @@ function generarInvoice() {
   closeModal('modalInvoice');
   toast('✅ Documento guardado');
 
-  // Escribir PDF en la ventana ya abierta
   if (win) {
     abrirInvoicePDFEnVentana(data, win);
   } else {
-    toast('Permite ventanas emergentes para imprimir', 'error');
+    // Fallback: si el navegador bloqueó el popup, generar blob y descargar
+    toast('Ventana emergente bloqueada — generando descarga directa…', 'error');
+    setTimeout(() => abrirInvoicePDFFallback(data), 400);
   }
+}
+
+// Fallback cuando window.open está bloqueado: genera el HTML y lo descarga / abre vía <a>
+function abrirInvoicePDFFallback(data) {
+  // Reutilizar la misma lógica de generación de HTML creando una ventana temporal
+  const tempWin = { _html: '' };
+  const originalWrite = (html) => {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    a.download = data.numero + '_' + (data.titulo || 'doc') + '.html';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 15000);
+    toast('📄 Documento descargado — ábrelo para imprimir', 'error');
+  };
+  // Construir objeto ventana simulado
+  const fakeWin = {
+    document: {
+      open: () => {},
+      write: (html) => { fakeWin._html = html; },
+      close: () => { originalWrite(fakeWin._html); }
+    }
+  };
+  abrirInvoicePDFEnVentana(data, fakeWin);
 }
 
 // ── Render tabla Documentos Primarioss (solo financieros)
@@ -2263,6 +2291,14 @@ function editInvoice(id) {
   document.getElementById('inv_moneda').value= inv.moneda  || 'USD';
   document.getElementById('inv_cliente').value = inv.clienteId || '';
   document.getElementById('inv_proveedor').value = inv.proveedor || '';
+  // Restaurar empresa emisora
+  if (inv.emisoraKey) {
+    const selEmisor = document.getElementById('inv_empresa_emisora');
+    if (selEmisor.querySelector(`option[value="${inv.emisoraKey}"]`)) {
+      selEmisor.value = inv.emisoraKey;
+    }
+    onChangeEmpresaEmisora();
+  }
   // Restaurar selector de proveedor
   const provSel = document.getElementById('inv_proveedor_sel');
   const provInp = document.getElementById('inv_proveedor');
@@ -2286,6 +2322,25 @@ function editInvoice(id) {
   document.getElementById('inv_bultos').value= inv.bultos  || '';
   document.getElementById('inv_notas').value = inv.notas   || '';
   document.getElementById('inv_entregado_por').value = inv.entregadoPor || '';
+  // Restaurar consignatario
+  const consSel = document.getElementById('inv_consignatario_sel');
+  const consInp = document.getElementById('inv_consignatario_custom');
+  if (inv.consignatario) {
+    const opt = consSel.querySelector(`option[value="${inv.consignatario}"]`);
+    if (opt) { consSel.value = inv.consignatario; consInp.style.display = 'none'; }
+    else { consSel.value = '__nuevo__'; consInp.value = inv.consignatario; consInp.style.display = 'block'; }
+  } else { consSel.value = ''; consInp.style.display = 'none'; }
+  // Restaurar condición de pago
+  const cdSel = document.getElementById('inv_condicion_sel');
+  const cdInp = document.getElementById('inv_condicion');
+  if (inv.condicion) {
+    const opt2 = cdSel.querySelector(`option[value="${inv.condicion}"]`);
+    if (opt2) { cdSel.value = inv.condicion; cdInp.style.display = 'none'; }
+    else { cdSel.value = '__nuevo__'; cdInp.value = inv.condicion; cdInp.style.display = 'block'; }
+  } else { cdSel.value = ''; cdInp.style.display = 'none'; }
+  // Incoterm
+  const incEl = document.getElementById('inv_incoterm');
+  if (incEl && inv.incoterm) incEl.value = inv.incoterm;
   if(inv.clienteId) onSelectInvoiceCliente();
   // Líneas — restaurar con fallback si el producto no está en el catálogo actual
   (inv.lineas||[]).forEach((l,i) => {
@@ -2309,6 +2364,9 @@ function editInvoice(id) {
     calcLinea(n);
   });
   onChangeTipoDoc();
+  // Título del modal en modo edición
+  const tipoLabelEdit = getTipoLabel(inv.tipoKey || 'I').toUpperCase();
+  document.getElementById('modalInvoiceTitle').innerHTML = `EDITAR <span>${tipoLabelEdit}</span>`;
   document.getElementById('modalInvoice').classList.add('open');
 }
 
