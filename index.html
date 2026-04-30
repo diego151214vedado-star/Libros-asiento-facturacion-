@@ -2389,29 +2389,29 @@ function abrirInvoicePDF(data) {
   const sc  = emp.colorSecondary || '#0EA5E9';
 
   const logoH = emp.logo
-    ? `<img src="${emp.logo}" style="height:48px;object-fit:contain">`
-    : `<div style="font-size:16px;font-weight:900"><span style="color:${pc}">${(emp.nombre||'SiFa').split(' ')[0]}</span> ${(emp.nombre||'').split(' ').slice(1).join(' ')}</div>`;
+    ? `<img src="${emp.logo}" style="height:36px;object-fit:contain">`
+    : `<div style="font-size:13px;font-weight:900"><span style="color:${pc}">${(emp.nombre||'SiFa').split(' ')[0]}</span> ${(emp.nombre||'').split(' ').slice(1).join(' ')}</div>`;
 
   const hasCodigo = data.lineas.some(l => l.codigo);
-  const thCodigo  = hasCodigo ? '<th style="padding:9px 10px;text-align:left;border:1px solid #bbb;width:80px;font-size:10px">CÓDIGO</th>' : '';
+  const thCodigo  = hasCodigo ? '<th style="padding:5px 7px;text-align:left;border:1px solid #bbb;width:70px;font-size:8px">CÓDIGO</th>' : '';
 
   const lineasHTML = data.lineas.map(l => {
-    const tdCod = hasCodigo ? `<td style="padding:9px 10px;border:1px solid #ddd;font-family:monospace;font-size:10px">${l.codigo||''}</td>` : '';
+    const tdCod = hasCodigo ? `<td style="padding:5px 7px;border:1px solid #ddd;font-family:monospace;font-size:8px">${l.codigo||''}</td>` : '';
     return `<tr>
-      <td style="padding:9px 10px;font-weight:700;border:1px solid #ddd">${l.nombre}</td>
+      <td style="padding:5px 7px;font-weight:700;border:1px solid #ddd;font-size:9px">${l.nombre}</td>
       ${tdCod}
-      <td style="padding:9px 10px;text-align:center;border:1px solid #ddd">${l.um}</td>
-      <td style="padding:9px 10px;text-align:right;border:1px solid #ddd">${l.qty.toLocaleString('es',{minimumFractionDigits:3,maximumFractionDigits:3})}</td>
-      <td style="padding:9px 10px;text-align:right;border:1px solid #ddd">${l.price.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})} ${data.moneda}</td>
-      <td style="padding:9px 10px;text-align:right;border:1px solid #ddd;font-weight:700">${l.importe.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})} ${data.moneda}</td>
+      <td style="padding:5px 7px;text-align:center;border:1px solid #ddd">${l.um}</td>
+      <td style="padding:5px 7px;text-align:right;border:1px solid #ddd">${l.qty.toLocaleString('es',{minimumFractionDigits:3,maximumFractionDigits:3})}</td>
+      <td style="padding:5px 7px;text-align:right;border:1px solid #ddd">${l.price.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})} ${data.moneda}</td>
+      <td style="padding:5px 7px;text-align:right;border:1px solid #ddd;font-weight:700">${l.importe.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})} ${data.moneda}</td>
     </tr>`;
   }).join('');
 
   const cols = hasCodigo ? 5 : 4;
-  let totHTML = `<tr><td colspan="${cols}" style="border:none"></td><td style="padding:8px 10px;border:1px solid #ddd;font-weight:700;background:#f9f9f9;text-align:right">SUBTOTAL</td><td style="padding:8px 10px;border:1px solid #ddd;text-align:right;font-weight:700">${data.subtotal.toLocaleString('es',{minimumFractionDigits:2})} ${data.moneda}</td></tr>`;
-  if (data.flete  > 0) totHTML += `<tr><td colspan="${cols}" style="border:none"></td><td style="padding:8px 10px;border:1px solid #ddd;font-weight:700;background:#f9f9f9;text-align:right">FLETE</td><td style="padding:8px 10px;border:1px solid #ddd;text-align:right">${data.flete.toLocaleString('es',{minimumFractionDigits:2})} ${data.moneda}</td></tr>`;
-  if (data.seguro > 0) totHTML += `<tr><td colspan="${cols}" style="border:none"></td><td style="padding:8px 10px;border:1px solid #ddd;font-weight:700;background:#f9f9f9;text-align:right">SEGURO</td><td style="padding:8px 10px;border:1px solid #ddd;text-align:right">${data.seguro.toLocaleString('es',{minimumFractionDigits:2})} ${data.moneda}</td></tr>`;
-  totHTML += `<tr><td colspan="${cols}" style="border:none"></td><td style="padding:10px;border:1px solid #ddd;font-weight:900;background:#d0d0d0;text-align:right">TOTAL</td><td style="padding:10px;border:1px solid #ddd;text-align:right;font-weight:900;font-size:14px">${data.total.toLocaleString('es',{minimumFractionDigits:2})} ${data.moneda}</td></tr>`;
+  let totHTML = `<tr><td colspan="${cols}" style="border:none"></td><td style="padding:5px 7px;border:1px solid #ddd;font-weight:700;background:#f9f9f9;text-align:right">SUBTOTAL</td><td style="padding:5px 7px;border:1px solid #ddd;text-align:right;font-weight:700">${data.subtotal.toLocaleString('es',{minimumFractionDigits:2})} ${data.moneda}</td></tr>`;
+  if (data.flete  > 0) totHTML += `<tr><td colspan="${cols}" style="border:none"></td><td style="padding:5px 7px;border:1px solid #ddd;font-weight:700;background:#f9f9f9;text-align:right">FLETE</td><td style="padding:5px 7px;border:1px solid #ddd;text-align:right">${data.flete.toLocaleString('es',{minimumFractionDigits:2})} ${data.moneda}</td></tr>`;
+  if (data.seguro > 0) totHTML += `<tr><td colspan="${cols}" style="border:none"></td><td style="padding:5px 7px;border:1px solid #ddd;font-weight:700;background:#f9f9f9;text-align:right">SEGURO</td><td style="padding:5px 7px;border:1px solid #ddd;text-align:right">${data.seguro.toLocaleString('es',{minimumFractionDigits:2})} ${data.moneda}</td></tr>`;
+  totHTML += `<tr><td colspan="${cols}" style="border:none"></td><td style="padding:6px 7px;border:1px solid #ddd;font-weight:900;background:#d0d0d0;text-align:right">TOTAL</td><td style="padding:6px 7px;border:1px solid #ddd;text-align:right;font-weight:900;font-size:11px">${data.total.toLocaleString('es',{minimumFractionDigits:2})} ${data.moneda}</td></tr>`;
 
   // Partes (cliente, proveedor, consignatario) — solo los que tienen valor
   const partes = [];
@@ -2434,21 +2434,38 @@ function abrirInvoicePDF(data) {
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>${data.titulo} ${data.numero}</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1a1a1a;background:#fff;padding:24px;font-size:12px}@media print{body{padding:10px}@page{margin:1cm;size:A4}}</style>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;color:#1a1a1a;background:#fff;padding:14px;font-size:10px}
+table{font-size:10px}
+@media print{
+  body{padding:6px}
+  @page{
+    margin:0.7cm;
+    size:A4;
+    /* Ocultar encabezado y pie del navegador */
+    marks: none;
+  }
+  /* Chrome/Edge: ocultar URL en pie */
+  html { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  /* Evitar que el navegador añada URL */
+  body::after { content: none !important; }
+}
+</style>
 </head><body>
 
 <!-- HEADER -->
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:3px solid ${pc}">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-bottom:8px;border-bottom:3px solid ${pc}">
   <div>
     ${logoH}
-    <div style="font-size:9px;color:#666;margin-top:4px;line-height:1.8">${emp.direccion||''} ${emp.ein?'· '+emp.ein:''} ${emp.email?'<br>'+emp.email:''} ${emp.tel?'· '+emp.tel:''}</div>
+    <div style="font-size:8px;color:#666;margin-top:3px;line-height:1.6">${emp.direccion||''} ${emp.ein?'· '+emp.ein:''} ${emp.email?'<br>'+emp.email:''} ${emp.tel?'· '+emp.tel:''}</div>
   </div>
   <div style="text-align:right">
-    <div style="font-size:36px;font-weight:900;color:${pc};letter-spacing:2px;line-height:1">${data.titulo}</div>
-    <table style="border-collapse:collapse;margin-top:8px;min-width:170px;margin-left:auto">
-      <tr><td style="padding:4px 10px;background:#f5f5f5;font-weight:700;font-size:9px;border:1px solid #ddd">N°</td><td style="padding:4px 10px;border:1px solid #ddd;font-family:monospace;font-weight:700">${data.numero}</td></tr>
-      <tr><td style="padding:4px 10px;background:#f5f5f5;font-weight:700;font-size:9px;border:1px solid #ddd">FECHA</td><td style="padding:4px 10px;border:1px solid #ddd">${fmtInvDate(data.fecha)}</td></tr>
-      <tr><td style="padding:4px 10px;background:#f5f5f5;font-weight:700;font-size:9px;border:1px solid #ddd">MONEDA</td><td style="padding:4px 10px;border:1px solid #ddd">${data.moneda}</td></tr>
+    <div style="font-size:26px;font-weight:900;color:${pc};letter-spacing:2px;line-height:1">${data.titulo}</div>
+    <table style="border-collapse:collapse;margin-top:6px;min-width:150px;margin-left:auto">
+      <tr><td style="padding:3px 8px;background:#f5f5f5;font-weight:700;font-size:8px;border:1px solid #ddd">N°</td><td style="padding:3px 8px;border:1px solid #ddd;font-family:monospace;font-weight:700;font-size:9px">${data.numero}</td></tr>
+      <tr><td style="padding:3px 8px;background:#f5f5f5;font-weight:700;font-size:8px;border:1px solid #ddd">FECHA</td><td style="padding:3px 8px;border:1px solid #ddd;font-size:9px">${fmtInvDate(data.fecha)}</td></tr>
+      <tr><td style="padding:3px 8px;background:#f5f5f5;font-weight:700;font-size:8px;border:1px solid #ddd">MONEDA</td><td style="padding:3px 8px;border:1px solid #ddd;font-size:9px">${data.moneda}</td></tr>
     </table>
   </div>
 </div>
@@ -2473,29 +2490,29 @@ ${totalLetrasBlock}
 ${notasBlock}
 
 <!-- PIE DE FIRMA TRIPLE -->
-<div style="display:flex;margin-top:28px;border-top:2px solid ${pc}">
+<div style="display:flex;margin-top:16px;border-top:2px solid ${pc}">
 
   <!-- ENTREGA -->
-  <div style="flex:1;padding:14px 12px;border-right:1px solid #ddd">
-    <div style="font-size:8px;font-weight:900;letter-spacing:3px;color:${pc};text-transform:uppercase;margin-bottom:16px">Entrega</div>
-    <div style="height:36px"></div>
-    <div style="border-top:1px solid #aaa;margin-bottom:4px"></div>
-    <div style="font-size:10px;font-weight:700">${data.entregadoPor || '___________________________'}</div>
-    <div style="font-size:9px;color:#999;margin-top:2px">Nombre y firma</div>
+  <div style="flex:1;padding:10px 10px;border-right:1px solid #ddd">
+    <div style="font-size:7px;font-weight:900;letter-spacing:3px;color:${pc};text-transform:uppercase;margin-bottom:12px">Entrega</div>
+    <div style="height:28px"></div>
+    <div style="border-top:1px solid #aaa;margin-bottom:3px"></div>
+    <div style="font-size:9px;font-weight:700">${data.entregadoPor || '___________________________'}</div>
+    <div style="font-size:8px;color:#999;margin-top:1px">Nombre y firma</div>
   </div>
 
   <!-- RECIBE -->
-  <div style="flex:1;padding:14px 12px;border-right:1px solid #ddd">
-    <div style="font-size:8px;font-weight:900;letter-spacing:3px;color:${pc};text-transform:uppercase;margin-bottom:16px">Recibe</div>
-    <div style="height:36px"></div>
-    <div style="border-top:1px solid #aaa;margin-bottom:4px"></div>
-    <div style="font-size:10px;font-weight:700">___________________________</div>
-    <div style="font-size:9px;color:#999;margin-top:2px">Nombre y firma</div>
+  <div style="flex:1;padding:10px 10px;border-right:1px solid #ddd">
+    <div style="font-size:7px;font-weight:900;letter-spacing:3px;color:${pc};text-transform:uppercase;margin-bottom:12px">Recibe</div>
+    <div style="height:28px"></div>
+    <div style="border-top:1px solid #aaa;margin-bottom:3px"></div>
+    <div style="font-size:9px;font-weight:700">___________________________</div>
+    <div style="font-size:8px;color:#999;margin-top:1px">Nombre y firma</div>
   </div>
 
   <!-- AUTORIZA -->
-  <div style="flex:1.3;padding:14px 12px;text-align:center;position:relative">
-    <div style="font-size:8px;font-weight:900;letter-spacing:3px;color:${pc};text-transform:uppercase;margin-bottom:4px">Autoriza</div>
+  <div style="flex:1.3;padding:10px 10px;text-align:center;position:relative">
+    <div style="font-size:7px;font-weight:900;letter-spacing:3px;color:${pc};text-transform:uppercase;margin-bottom:4px">Autoriza</div>
 
     <!-- Cuño fondo (marca de agua) -->
     ${emp.cunoSVG ? `<div style="position:absolute;top:8px;right:8px;opacity:0.12;pointer-events:none">${emp.cunoSVG.replace(/width="152"/, 'width="86"').replace(/height="152"/, 'height="86"')}</div>` : ''}
