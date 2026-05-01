@@ -2183,18 +2183,34 @@ function guardarInvoice() {
   saveInvoicesDB(); closeModal('modalInvoice'); renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
 }
 
-// ── Abre HTML en nueva pestaña compatible con Safari iOS (Blob URL + <a> click) ──
+// ── Abre HTML compatible con Safari iOS — usa data URI base64 ──
 function abrirHtmlBlob(html, nombreArchivo) {
-  const blob = new Blob([html], { type: 'text/html' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.target   = '_blank';
-  a.rel      = 'noopener noreferrer';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  // Safari iOS no renderiza Blob URLs como HTML — usar data URI base64
+  const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if (esIOS) {
+    // Codificar en base64 para evitar problemas con caracteres especiales
+    const b64 = btoa(unescape(encodeURIComponent(html)));
+    const a   = document.createElement('a');
+    a.href    = 'data:text/html;charset=utf-8;base64,' + b64;
+    a.target  = '_blank';
+    a.rel     = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } else {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.target   = '_blank';
+    a.rel      = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  }
 }
 
 function generarInvoice() {
