@@ -2207,10 +2207,6 @@ function facturacion() {
   if (!data) return;
 
   const esDoc = esFinanciero(data.tipoKey);
-  const yaContabilizado = facturas.some(f =>
-    f.invoiceId === data.id ||
-    (f.numero === data.numero && f.clienteId === data.clienteId)
-  );
 
   // Si es complementario (conduce, orden) — guardar y imprimir directo sin preguntar
   if (!esDoc || !data.clienteId || data.total <= 0) {
@@ -2220,6 +2216,9 @@ function facturacion() {
     return;
   }
 
+  // Buscar si ya existe factura vinculada a este invoice por su ID
+  const yaContabilizado = facturas.some(f => f.invoiceId === data.id);
+
   // Si ya está contabilizado — actualizar y reimprimir sin preguntar
   if (yaContabilizado) {
     _guardarDocumento(data, true);
@@ -2228,7 +2227,7 @@ function facturacion() {
     return;
   }
 
-  // Es financiero y no contabilizado — preguntar
+  // Es financiero nuevo sin contabilizar — preguntar
   _mostrarDialogoContabilizar(data);
 }
 
@@ -3381,8 +3380,8 @@ function updateBadges() {
   document.getElementById('badge-pagos').textContent=pagos.length;
   // Separar invoices financieros vs documentos complementarios
   const finTypes=['I','F'];
-  document.getElementById('badge-invoices').textContent=invoices.filter(x=>finTypes.includes(x.tipoKey)).length;
-  document.getElementById('badge-documentos').textContent=invoices.filter(x=>!finTypes.includes(x.tipoKey)).length;
+  document.getElementById('badge-invoices').textContent=invoices.filter(x=>esFinanciero(x.tipoKey||'I')).length;
+  document.getElementById('badge-documentos').textContent=invoices.filter(x=>!esFinanciero(x.tipoKey||'I')).length;
   document.getElementById('badge-calc').textContent=calculos.length;
   document.getElementById('badge-empresas').textContent=Object.keys(getTodasEmpresas()).length;
 }
