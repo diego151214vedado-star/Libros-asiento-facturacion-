@@ -2185,14 +2185,30 @@ function guardarInvoice() {
 }
 
 // ── Abre HTML compatible con Safari iOS — usa data URI base64 ──
-// ── Abre HTML — Blob URL en misma pestaña si popup bloqueado (Safari iOS) ──
+// ── Abre HTML — con navigator.share en iOS para sheet nativo ──
 function abrirEnVentana(html) {
+  const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const win  = window.open(url, '_blank');
-  if (!win || win.closed) {
-    window.location.href = url;
+
+  if (esIOS && navigator.share) {
+    const file = new File([blob], 'documento.html', { type: 'text/html' });
+    navigator.share({ files: [file], title: 'Documento SiFa' })
+      .catch(() => {
+        // Si share falla, abrir en nueva pestaña
+        const url = URL.createObjectURL(blob);
+        const win = window.open(url, '_blank');
+        if (!win) window.location.href = url;
+        setTimeout(() => URL.revokeObjectURL(url), 120000);
+      });
+    return;
   }
+
+  // No iOS — abrir en nueva pestaña normalmente
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (!win) window.location.href = url;
   setTimeout(() => URL.revokeObjectURL(url), 120000);
 }
 
@@ -2562,7 +2578,7 @@ table{font-size:10px}
 <div id="action-bar">
   <div class="doc-ref">SiFa &nbsp;·&nbsp; <span>${data.titulo}</span> ${data.numero}</div>
   <div style="display:flex;gap:8px">
-    <button class="ab-btn ab-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    <button class="ab-btn ab-print" onclick="(function(){var e=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);if(e&&navigator.share){var h=document.documentElement.outerHTML,b=new Blob([h],{type:'text/html'}),f=new File([b],'doc.html',{type:'text/html'});navigator.share({files:[f],title:document.title}).catch(function(){window.print();});}else{window.focus();setTimeout(function(){window.print();},100);}})()">🖨️ Imprimir / PDF</button>
     <button class="ab-btn ab-close" onclick="history.length>1?history.back():window.close()">✕ Cerrar</button>
   </div>
 </div>
