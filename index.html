@@ -1036,7 +1036,7 @@ if ('serviceWorker' in navigator) {
 
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('modalInvoice')">Cancelar</button>
-      <button class="btn btn-primary" onclick="generarInvoice()">💾 Guardar e Imprimir</button>
+      <button class="btn btn-primary" onclick="facturacion()">💾 Guardar e Imprimir</button>
     </div>
   </div>
 </div>
@@ -1265,8 +1265,6 @@ let concClienteId=null, excedentePendiente=null;
 
 // ═══ CARGAR DATOS AISLADOS POR EMPRESA ═══
 function cargarDatosEmpresa(emp) {
-  // Flush inmediato de la empresa anterior antes de cargar la nueva
-  // Esto garantiza que datos en memoria no persisten entre cambios
   clientes   = [];
   mercancias = [];
   facturas   = [];
@@ -1285,6 +1283,16 @@ function cargarDatosEmpresa(emp) {
   invoices   = JSON.parse(localStorage.getItem(p + 'invoices')   || '[]');
   calculos   = JSON.parse(localStorage.getItem(p + 'calculos')   || '[]');
   anticipios = JSON.parse(localStorage.getItem(p + 'anticipos')  || '[]');
+
+  // Deduplicar facturas — quedarse con la más reciente por número+cliente
+  const seen = {};
+  facturas = facturas.filter(f => {
+    const key = f.numero + '_' + f.clienteId;
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+  localStorage.setItem(p + 'facturas', JSON.stringify(facturas));
 }
 
 // ═══ SELECCIONAR EMPRESA ═══
@@ -1838,10 +1846,7 @@ function _abrirVentanaConciliacion(clienteId,desde,hasta) {
   const pc1=empresaActual?empresaActual.colorPrimary:'#E8202A';
   const logoH=empresaActual&&empresaActual.logo?`<img src="${empresaActual.logo}" style="height:38px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));background:transparent">`:`<div style="font-size:16px;font-weight:900"><span style="color:${pc1}">${empresaActual?empresaActual.nombre.split(' ')[0]:'DAL'}</span> ${empresaActual?empresaActual.nombre.split(' ').slice(1).join(' '):'MIAMI EXPORT LLC'}</div>`;
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Estado de Cuenta - ${cliente.nombre}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1a1a2e;background:#f0f0f0;font-size:11px}#doc-sheet{background:#fff;max-width:800px;margin:70px auto 40px;padding:28px;box-shadow:0 2px 16px rgba(0,0,0,.15)}#action-bar{position:fixed;top:0;left:0;right:0;height:56px;background:#1a1a2e;border-bottom:3px solid ${pc1};display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:999;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.4)}.ab-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:Arial,sans-serif;white-space:nowrap;flex-shrink:0}.ab-print{background:${pc1};color:#fff}.ab-print:hover{opacity:.88}.ab-close{background:transparent;color:#aaa;border:1px solid #444}.ab-close:hover{background:#333;color:#fff}.doc-ref{color:#fff;font-size:13px;font-weight:700}@media print{#action-bar{display:none}body{background:#fff}#doc-sheet{margin:0;padding:0;box-shadow:none;max-width:none}}</style></head><body><div id="action-bar"><div class="doc-ref">Estado de Cuenta — ${cliente.nombre}</div><div style="display:flex;gap:8px"><button class="ab-btn ab-print" onclick="(function(){var ua=navigator.userAgent;var isChromeIOS=/CriOS/.test(ua);if(isChromeIOS){var msg=document.createElement('div');msg.style.cssText='position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#1a1a2e;border:2px solid #F59E0B;border-radius:14px;padding:20px 24px;z-index:9999;max-width:360px;width:90%;text-align:center;font-family:Arial,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.5)';msg.innerHTML='<div style="font-size:28px;margin-bottom:10px">📤</div><div style="color:#F59E0B;font-weight:700;font-size:14px;margin-bottom:8px">Para imprimir en Chrome iOS</div><div style="color:#ccc;font-size:13px;line-height:1.6">Toca <strong style="color:#fff">⬆️ Compartir</strong> en la barra del navegador y selecciona <strong style="color:#fff">Imprimir</strong></div><button onclick="this.parentNode.remove()" style="margin-top:14px;background:#F59E0B;color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer">Entendido</button>';document.body.appendChild(msg);setTimeout(function(){if(msg.parentNode)msg.remove();},8000);}else{window.print();}})()">🖨️ Imprimir / PDF</button><button class="ab-btn ab-close" onclick="history.length>1?history.back():window.close()">✕ Cerrar</button></div></div><div id="doc-sheet"><div style="border-bottom:3px solid ${pc1};padding-bottom:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start"><div>${logoH}<div style="font-size:9px;color:#666;margin-top:4px;line-height:1.7">${empresaActual?empresaActual.direccion+' · '+empresaActual.ein:''}</div></div><div style="text-align:right"><div style="font-size:12px;font-weight:700;color:${pc1}">ESTADO DE CUENTA</div><div style="font-size:9px;color:#888;margin-top:3px">${hoy}</div></div></div><div style="background:#f5f5f5;border-left:4px solid ${pc1};padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:16px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:2px">Cliente</div><div style="font-size:17px;font-weight:700">${cliente.nombre}</div></div><table style="width:100%;border-collapse:collapse;margin-bottom:16px"><thead><tr style="background:#1a1a2e;color:#fff"><th style="padding:8px;text-align:left;font-size:9px">FECHA</th><th style="padding:8px;text-align:left;font-size:9px">TIPO</th><th style="padding:8px;text-align:left;font-size:9px">REF.</th><th style="padding:8px;text-align:left;font-size:9px">DESCRIPCIÓN</th><th style="padding:8px;text-align:right;font-size:9px">MONTO</th><th style="padding:8px;text-align:right;font-size:9px">SALDO</th></tr></thead><tbody>${filasHTML}</tbody></table><div style="display:flex;gap:10px;margin-bottom:16px"><div style="flex:1;border:1px solid #e0e0e8;border-radius:6px;padding:10px;text-align:center"><div style="font-size:8px;text-transform:uppercase;color:#888;margin-bottom:3px">Total Facturado</div><div style="font-size:13px;font-weight:700;color:#1A3CCC">${fmtUSD(totalF)}</div></div><div style="flex:1;border:1px solid #e0e0e8;border-radius:6px;padding:10px;text-align:center"><div style="font-size:8px;text-transform:uppercase;color:#888;margin-bottom:3px">Total Pagado</div><div style="font-size:13px;font-weight:700;color:#16a34a">${fmtUSD(totalP)}</div></div><div style="flex:1;border:1px solid #e0e0e8;border-radius:6px;padding:10px;text-align:center"><div style="font-size:8px;text-transform:uppercase;color:#888;margin-bottom:3px">${sf>0.01?'Saldo a Pagar':sf<-0.01?'Saldo a Favor':'Saldo'}</div><div style="font-size:13px;font-weight:700;color:${sf>0.01?'#dc2626':sf<-0.01?'#16a34a':'#1A3CCC'}">${fmtUSD(Math.abs(sf))}</div></div></div><div style="background:${nBg};border-left:4px solid ${nBorder};padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:16px;font-size:11px;line-height:1.7">${nTxt}</div><div style="border-top:1px solid #e0e0e8;padding-top:10px;display:flex;justify-content:space-between;align-items:flex-end"><div><div style="width:140px;border-bottom:1px solid #aaa;margin-bottom:3px;height:20px"></div><div style="font-weight:700;font-size:10px">${empresaActual?empresaActual.gerente:''}</div><div style="font-size:8px;color:#888;text-transform:uppercase">${empresaActual?empresaActual.cargoGerente:''}</div></div><div style="text-align:right;font-size:9px;color:#555;line-height:1.9">${hoy}<br>${empresaActual?empresaActual.ein:''}${empresaActual&&empresaActual.banco?'<br>'+empresaActual.banco:''}</div></div></div></body></html>`;
-  const blob=new Blob([html],{type:'text/html'}), url=URL.createObjectURL(blob);
-  const win = window.open('', '_blank');
-  if (win) { win.document.open(); win.document.write(html); win.document.close(); }
-  else { const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},30000); }
+  abrirEnVentana(html);
 }
 
 // ═══ INVOICES ═══
@@ -2151,63 +2156,31 @@ function abrirNuevoDocFinanciero() {
   document.querySelectorAll('#modalInvoice input[type=date]').forEach(i => { if(!i.value) i.value = new Date().toISOString().split('T')[0]; });
 }
 
-function guardarInvoice() {
-  const data = getInvoiceData(); if (!data) return;
-  const idx  = invoices.findIndex(x => x.id === data.id);
-  if (idx >= 0) invoices[idx] = data; else invoices.push(data);
-  saveConsecutivo(data.numero);
-
-  // Vincular a factura origen si viene de generarInvoiceDesdeFactura
-  const facturaOrigenId = document.getElementById('inv_id').dataset.facturaOrigen;
-
-  if (esFinanciero(data.tipoKey) && data.clienteId && data.total > 0) {
-    // Buscar por invoiceId o por facturaOrigen
-    const fExistente = facturas.find(f => f.invoiceId === data.id || f.id === facturaOrigenId);
-    if (fExistente) {
-      const i = facturas.findIndex(f => f.id === fExistente.id);
-      facturas[i] = { ...facturas[i], invoiceId: data.id, deuda: data.total,
-        clienteId: data.clienteId,
-        mercanciaId: data.lineas[0]?.prodId || facturas[i].mercanciaId,
-        fecha: data.fecha, numero: data.numero };
-    } else {
-      facturas.push({ id: uid(), invoiceId: data.id, fecha: data.fecha,
-        numero: data.numero, clienteId: data.clienteId,
-        mercanciaId: data.lineas[0]?.prodId || '', deuda: data.total, arrastre: 0 });
-    }
-    save();
-    toast('Documento guardado y deuda registrada ✅');
-  } else {
-    toast('Documento guardado ✅');
-  }
-
-  delete document.getElementById('inv_id').dataset.facturaOrigen;
-  saveInvoicesDB(); closeModal('modalInvoice'); renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
-}
-
-// ── Abre HTML compatible con Safari iOS — usa data URI base64 ──
-// ── Abre HTML — Blob URL en misma pestaña si popup bloqueado (Safari iOS) ──
+// ── Abre HTML en nueva pestaña con Blob URL ──
 function abrirEnVentana(html) {
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const win  = window.open(url, '_blank');
-  if (!win || win.closed) {
-    window.location.href = url;
-  }
+  if (!win || win.closed) window.location.href = url;
   setTimeout(() => URL.revokeObjectURL(url), 120000);
 }
 
-function generarInvoice() {
-  const data = getInvoiceData();
-  if (!data) return;
+// ── Guardar datos del invoice en memoria y storage ──
+function _guardarDocumento(data, contabilizar) {
+  const facturaOrigenId = document.getElementById('inv_id').dataset.facturaOrigen;
 
+  // Guardar el invoice
   const idx = invoices.findIndex(x => x.id === data.id);
   if (idx >= 0) invoices[idx] = data; else invoices.push(data);
   saveConsecutivo(data.numero);
 
-  const facturaOrigenId = document.getElementById('inv_id').dataset.facturaOrigen;
-
-  if (esFinanciero(data.tipoKey) && data.clienteId && data.total > 0) {
-    const fExistente = facturas.find(f => f.invoiceId === data.id || f.id === facturaOrigenId);
+  // Contabilizar — crear/actualizar en facturas
+  if (contabilizar && esFinanciero(data.tipoKey) && data.clienteId && data.total > 0) {
+    const fExistente = facturas.find(f =>
+      f.invoiceId === data.id ||
+      f.id === facturaOrigenId ||
+      (f.numero === data.numero && f.clienteId === data.clienteId)
+    );
     if (fExistente) {
       const i = facturas.findIndex(f => f.id === fExistente.id);
       facturas[i] = { ...facturas[i], invoiceId: data.id, deuda: data.total,
@@ -2223,15 +2196,108 @@ function generarInvoice() {
   }
 
   delete document.getElementById('inv_id').dataset.facturaOrigen;
-  saveInvoicesDB(); renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
+  saveInvoicesDB();
+  renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
   closeModal('modalInvoice');
-  toast('✅ Documento guardado');
-
-  const html = buildInvoiceHTML(data);
-  if (win) {
-    win.document.open(); win.document.write(html); win.document.close();
-  }
 }
+
+// ── Función principal unificada de facturación ──
+function facturacion() {
+  const data = getInvoiceData();
+  if (!data) return;
+
+  const esDoc = esFinanciero(data.tipoKey);
+  const yaContabilizado = facturas.some(f =>
+    f.invoiceId === data.id ||
+    (f.numero === data.numero && f.clienteId === data.clienteId)
+  );
+
+  // Si es complementario (conduce, orden) — guardar y imprimir directo sin preguntar
+  if (!esDoc || !data.clienteId || data.total <= 0) {
+    _guardarDocumento(data, false);
+    toast('✅ Documento guardado');
+    abrirEnVentana(buildInvoiceHTML(data));
+    return;
+  }
+
+  // Si ya está contabilizado — actualizar y reimprimir sin preguntar
+  if (yaContabilizado) {
+    _guardarDocumento(data, true);
+    toast('✅ Documento actualizado');
+    abrirEnVentana(buildInvoiceHTML(data));
+    return;
+  }
+
+  // Es financiero y no contabilizado — preguntar
+  _mostrarDialogoContabilizar(data);
+}
+
+// ── Diálogo: ¿Contabilizar este documento? ──
+function _mostrarDialogoContabilizar(data) {
+  // Quitar diálogo anterior si existe
+  const prev = document.getElementById('modalContabilizar');
+  if (prev) prev.remove();
+
+  const d = document.createElement('div');
+  d.id = 'modalContabilizar';
+  d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+
+  const pc = (empresaActual && empresaActual.colorPrimary) || '#6366F1';
+
+  d.innerHTML = `
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;width:100%;max-width:460px;animation:slideUp .2s ease">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;margin-bottom:8px">
+      GUARDAR <span style="color:${pc}">DOCUMENTO</span>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">
+      <strong style="color:var(--text)">${data.titulo} ${data.numero}</strong> — ${fmtUSD(data.total)}<br>
+      ¿Deseas contabilizar este documento para registrar la deuda en el libro de facturas?
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+
+      <button onclick="_confirmarFacturacion(true)" style="display:flex;align-items:flex-start;gap:14px;background:var(--surface2);border:1px solid ${pc};border-radius:14px;padding:16px;cursor:pointer;text-align:left;width:100%;transition:all .15s" onmouseover="this.style.background='${pc}18'" onmouseout="this.style.background='var(--surface2)'">
+        <span style="font-size:24px;flex-shrink:0">📒</span>
+        <div>
+          <div style="font-weight:700;color:var(--text);font-size:14px;margin-bottom:3px">Guardar y Contabilizar</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.5">Se registra como factura pendiente de cobro. Aparece en Facturas, Dashboard y estados de cuenta.</div>
+        </div>
+      </button>
+
+      <button onclick="_confirmarFacturacion(false)" style="display:flex;align-items:flex-start;gap:14px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;text-align:left;width:100%;transition:all .15s" onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='var(--surface2)'">
+        <span style="font-size:24px;flex-shrink:0">📄</span>
+        <div>
+          <div style="font-weight:700;color:var(--text);font-size:14px;margin-bottom:3px">Solo guardar e imprimir</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.5">Se guarda como documento sin impacto contable. No crea deuda ni aparece en facturas.</div>
+        </div>
+      </button>
+
+    </div>
+
+    <div style="text-align:right">
+      <button onclick="document.getElementById('modalContabilizar').remove()" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:10px 20px;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px">Cancelar</button>
+    </div>
+  </div>`;
+
+  // Guardar data temporalmente para usarla en _confirmarFacturacion
+  window._facturacionPendiente = data;
+  document.body.appendChild(d);
+}
+
+function _confirmarFacturacion(contabilizar) {
+  const d = document.getElementById('modalContabilizar');
+  if (d) d.remove();
+  const data = window._facturacionPendiente;
+  window._facturacionPendiente = null;
+  if (!data) return;
+  _guardarDocumento(data, contabilizar);
+  toast(contabilizar ? '✅ Documento guardado y contabilizado' : '✅ Documento guardado');
+  abrirEnVentana(buildInvoiceHTML(data));
+}
+
+// Mantener alias para compatibilidad con generarInvoiceDesdeFactura
+function generarInvoice() { facturacion(); }
+function guardarInvoice() { facturacion(); }
 
 
 
