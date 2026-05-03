@@ -426,7 +426,7 @@ if ('serviceWorker' in navigator) {
   position: relative;
 }
 .empresa-card:hover { transform: translateY(-3px); }
-.empresa-card img { width: 100px; height: 66px; object-fit: contain; margin-bottom: 12px; }
+.empresa-card img { width: 100px; height: 66px; object-fit: contain; margin-bottom: 12px; background: transparent; mix-blend-mode: multiply; filter: drop-shadow(0 2px 8px rgba(0,0,0,.3)); }
 .empresa-card .emp-name { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 2px; color: #EEEEF2; margin-bottom: 4px; }
 .empresa-card .emp-sub { font-size: 10px; color: #8888A0; line-height: 1.5; }
 .emp-badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; }
@@ -2854,7 +2854,7 @@ function previewLogo() {
   reader.onload = (e) => {
     _logoBase64 = e.target.result;
     document.getElementById('emp_logo_preview').innerHTML =
-      `<img src="${_logoBase64}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))">`;
+      `<img src="${_logoBase64}" style="width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))">`;
     document.getElementById('emp_palette_label').textContent = 'Analizando colores…';
     const img = new Image();
     img.onload = () => {
@@ -3038,7 +3038,7 @@ function prepareModalEmpresa(key) {
     const emp = getEmpresa(key); if (!emp) return;
     _logoBase64 = emp.logo || null;
     if (emp.logo) document.getElementById('emp_logo_preview').innerHTML =
-      `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))">`;
+      `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))">`;
 
     const fields = {
       emp_nombre:'nombre', emp_sub:'sub', emp_ein:'ein', emp_prefix:'dbPrefix',
@@ -3226,7 +3226,7 @@ function renderEmpresas() {
     const sc = emp.colorSecondary || '#0EA5E9';
     const ac = emp.colorAccent    || '#22C55E';
     const logoHTML = emp.logo
-      ? `<img src="${emp.logo}" style="width:110px;height:72px;object-fit:contain;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));mix-blend-mode:normal;background:transparent">`
+      ? `<img src="${emp.logo}" style="width:110px;height:72px;object-fit:contain;margin-bottom:16px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));background:transparent;mix-blend-mode:multiply">`
       : `<div style="width:80px;height:56px;background:linear-gradient(135deg,${pc},${sc});border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:16px;box-shadow:0 6px 20px ${pc}44">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
     const dots = `<div style="display:flex;gap:5px;justify-content:center;margin-top:10px"><span style="width:8px;height:8px;border-radius:50%;background:${pc};display:inline-block"></span><span style="width:8px;height:8px;border-radius:50%;background:${sc};display:inline-block"></span><span style="width:8px;height:8px;border-radius:50%;background:${ac};display:inline-block"></span></div>`;
     const nota = isActiva
@@ -3254,7 +3254,7 @@ function rebuildEmpresaSelector() {
     const isActiva=key===actKey;
     const pc=emp.colorPrimary||'#6366F1', sc=emp.colorSecondary||'#0EA5E9', ac=emp.colorAccent||'#22C55E';
     const logoHTML=emp.logo
-      ?`<img src="${emp.logo}" style="width:100px;height:66px;object-fit:contain;margin-bottom:12px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.5));background:transparent">`
+      ?`<img src="${emp.logo}" style="width:100px;height:66px;object-fit:contain;margin-bottom:12px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.3));background:transparent;mix-blend-mode:multiply">`
       :`<div style="width:72px;height:50px;background:linear-gradient(135deg,${pc},${sc});border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:white;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-bottom:12px">${emp.nombre.split(' ').map(w=>w[0]).slice(0,3).join('')}</div>`;
     const dots=`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${pc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${sc};margin-right:4px"></span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${ac}"></span>`;
     return `<div class="empresa-card" onclick="seleccionarEmpresaDirecta('${key}')"
@@ -3295,7 +3295,7 @@ function applyEmpresaTheme(emp) {
   if (empSub)    empSub.textContent    = emp.ein || emp.sub || '';
   if (empLogo) {
     if (emp.logo) {
-      empLogo.innerHTML = `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,.6))">`;
+      empLogo.innerHTML = `<img src="${emp.logo}" style="width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 1px 4px rgba(0,0,0,.4))">`;
       empLogo.style.background = 'transparent';
     } else {
       empLogo.innerHTML = emp.nombre.split(' ').map(w=>w[0]).slice(0,2).join('');
