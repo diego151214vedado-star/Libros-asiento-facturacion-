@@ -507,8 +507,12 @@ if ('serviceWorker' in navigator) {
       <span class="nav-icon">💰</span><span class="nav-label">Cobros</span>
       <span class="badge" id="badge-pagos">0</span>
     </button>
+    <button class="nav-tab" onclick="showSection('invoices')" id="tab-invoices">
+      <span class="nav-icon">📋</span><span class="nav-label">Doc. Primarios</span>
+      <span class="badge" id="badge-invoices">0</span>
+    </button>
     <button class="nav-tab" onclick="showSection('documentos')" id="tab-documentos">
-      <span class="nav-icon">📋</span><span class="nav-label">Documentos</span>
+      <span class="nav-icon">📄</span><span class="nav-label">Doc. Secundarios</span>
       <span class="badge" id="badge-documentos">0</span>
     </button>
 
@@ -667,22 +671,32 @@ if ('serviceWorker' in navigator) {
 
   <!-- INVOICES -->
   <!-- DOCUMENTOS PRIMARIOS (generan deuda) -->
+  <div class="section" id="section-invoices">
+    <div class="page-header">
+      <div>
+        <div class="page-title">FACTURAS / <span>INVOICES</span></div>
+        <div class="page-sub">Documentos financieros — crean deuda — contabilizables</div>
+      </div>
+      <button class="btn btn-primary" onclick="abrirNuevoDocFinanciero()">＋ Nueva Factura / Invoice</button>
+    </div>
+    <div class="table-wrapper">
+      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Tipo</th><th>Emisor</th><th>Cliente</th><th>Total</th><th>Acciones</th></tr></thead>
+      <tbody id="invoicesTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- DOCUMENTOS SECUNDARIOS (no generan deuda) -->
   <div class="section" id="section-documentos">
     <div class="page-header">
       <div>
-        <div class="page-title">EXPEDIENTE DE <span>DOCUMENTOS</span></div>
-        <div class="page-sub">Todos los documentos — contabilizados y complementarios</div>
+        <div class="page-title">DOCUMENTOS <span>COMPLEMENTARIOS</span></div>
+        <div class="page-sub">Conduces, órdenes de entrega y más — sin impacto contable</div>
       </div>
-      <button class="btn btn-primary" onclick="abrirNuevoDoc()">＋ Nuevo Documento</button>
+      <button class="btn btn-primary" onclick="abrirNuevoDocComplementario()">＋ Nuevo Documento</button>
     </div>
     <div class="table-wrapper">
-      <table>
-        <thead><tr>
-          <th>Fecha</th><th>N° Documento</th><th>Tipo</th><th>Emisor</th>
-          <th>Cliente / Destinatario</th><th>Total</th><th>Estado</th><th>Acciones</th>
-        </tr></thead>
-        <tbody id="documentosTable"></tbody>
-      </table>
+      <table><thead><tr><th>Fecha</th><th>N° Documento</th><th>Tipo</th><th>Emisor</th><th>Cliente / Destinatario</th><th>Acciones</th></tr></thead>
+      <tbody id="documentosTable"></tbody></table>
     </div>
   </div>
 
@@ -1022,7 +1036,7 @@ if ('serviceWorker' in navigator) {
 
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal('modalInvoice')">Cancelar</button>
-      <button class="btn btn-primary" onclick="facturacion()">💾 Guardar e Imprimir</button>
+      <button class="btn btn-primary" id="btnGuardarDoc" onclick="this.disabled=true;this.textContent='⏳ Guardando…';facturacion()">💾 Guardar e Imprimir</button>
     </div>
   </div>
 </div>
@@ -1270,15 +1284,25 @@ function cargarDatosEmpresa(emp) {
   calculos   = JSON.parse(localStorage.getItem(p + 'calculos')   || '[]');
   anticipios = JSON.parse(localStorage.getItem(p + 'anticipos')  || '[]');
 
-  // Deduplicar facturas — quedarse con la más reciente por número+cliente
-  const seen = {};
+  // Deduplicar facturas — quedarse con la primera por número+cliente
+  const seenF = {};
   facturas = facturas.filter(f => {
     const key = f.numero + '_' + f.clienteId;
-    if (seen[key]) return false;
-    seen[key] = true;
+    if (seenF[key]) return false;
+    seenF[key] = true;
     return true;
   });
   localStorage.setItem(p + 'facturas', JSON.stringify(facturas));
+
+  // Deduplicar invoices — quedarse con el primero por número+emisora
+  const seenI = {};
+  invoices = invoices.filter(inv => {
+    const key = (inv.numero || '') + '_' + (inv.emisoraKey || '');
+    if (seenI[key]) return false;
+    seenI[key] = true;
+    return true;
+  });
+  localStorage.setItem(p + 'invoices', JSON.stringify(invoices));
 }
 
 // ═══ SELECCIONAR EMPRESA ═══
@@ -1365,8 +1389,8 @@ const _SECTION_TITLES = {
   mercancias:  'CATÁLOGO DE <span>PRODUCTOS</span>',
   facturas:    'REGISTRO DE <span>FACTURAS</span>',
   pagos:       'REGISTRO DE <span>COBROS</span>',
-  invoices:    'EXPEDIENTE DE <span>DOCUMENTOS</span>',
-  documentos:  'EXPEDIENTE DE <span>DOCUMENTOS</span>',
+  invoices:    'DOCUMENTOS <span>PRIMARIOS</span>',
+  documentos:  'DOCUMENTOS <span>SECUNDARIOS</span>',
   calc:        'FORMACIÓN DE <span>PRECIOS</span>',
   empresas:    'SELECCIÓN DE <span>EMPRESA</span>',
 };
@@ -1410,7 +1434,8 @@ function showSection(id) {
   if (id === 'mercancias')  renderMercancias();
   if (id === 'facturas')    renderFacturas();
   if (id === 'pagos')       renderPagos();
-  if (id === 'invoices' || id === 'documentos') renderDocumentos();
+  if (id === 'invoices')    renderInvoices();
+  if (id === 'documentos')  renderDocumentos();
   if (id === 'calc')        renderCalc();
 }
 
@@ -1430,6 +1455,11 @@ function openModal(id) {
 }
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
+  // Rehabilitar botón de guardar por si acaso
+  if (id === 'modalInvoice') {
+    const btn = document.getElementById('btnGuardarDoc');
+    if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar e Imprimir'; }
+  }
   document.querySelectorAll('#'+id+' input:not([type=color]):not([type=file]), #'+id+' select, #'+id+' textarea').forEach(el=>{ el.value=''; });
   if(id==='modalCliente')   document.getElementById('modalClienteTitle').innerHTML='NUEVO <span>CLIENTE</span>';
   if(id==='modalMercancia') document.getElementById('modalMercanciaTitle').innerHTML='NUEVO <span>PRODUCTO</span>';
@@ -2112,19 +2142,34 @@ function getInvoiceData() {
 const TIPOS_FINANCIEROS = ['I', 'F'];
 function esFinanciero(tipoKey) { return TIPOS_FINANCIEROS.includes(tipoKey); }
 
-// ── Modal unificado para cualquier tipo de documento ──
-function abrirNuevoDoc() {
+function abrirNuevoDocComplementario() {
   populateInvoiceModal();
   document.getElementById('modalInvoiceTitle').innerHTML = 'NUEVO <span>DOCUMENTO</span>';
-  document.getElementById('inv_tipo').value = 'I';
+
+  // Eliminar opciones financieras del selector (Safari no soporta display:none en option)
+  const sel = document.getElementById('inv_tipo');
+  ['I','F'].forEach(val => {
+    const opt = sel.querySelector(`option[value="${val}"]`);
+    if (opt) opt.remove();
+  });
+  // Eliminar el optgroup de financieros
+  const optgroups = sel.querySelectorAll('optgroup');
+  if (optgroups[0]) optgroups[0].remove();
+
+  sel.value = 'O';
   onChangeTipoDoc();
   document.getElementById('modalInvoice').classList.add('open');
   document.querySelectorAll('#modalInvoice input[type=date]').forEach(i => { if(!i.value) i.value = new Date().toISOString().split('T')[0]; });
 }
 
-// Alias para compatibilidad con código existente
-function abrirNuevoDocComplementario() { abrirNuevoDoc(); }
-function abrirNuevoDocFinanciero()     { abrirNuevoDoc(); }
+function abrirNuevoDocFinanciero() {
+  populateInvoiceModal();
+  document.getElementById('modalInvoiceTitle').innerHTML = 'NUEVA <span>FACTURA / INVOICE</span>';
+  document.getElementById('inv_tipo').value = 'I';
+  onChangeTipoDoc();
+  document.getElementById('modalInvoice').classList.add('open');
+  document.querySelectorAll('#modalInvoice input[type=date]').forEach(i => { if(!i.value) i.value = new Date().toISOString().split('T')[0]; });
+}
 
 // ── Abre HTML en nueva pestaña con Blob URL ──
 function abrirEnVentana(html) {
@@ -2141,7 +2186,13 @@ function _guardarDocumento(data, contabilizar) {
 
   // Guardar el invoice
   const idx = invoices.findIndex(x => x.id === data.id);
-  if (idx >= 0) invoices[idx] = data; else invoices.push(data);
+  if (idx >= 0) {
+    invoices[idx] = data;
+  } else {
+    // Evitar duplicado por número+emisora
+    const dupIdx = invoices.findIndex(x => x.numero === data.numero && x.emisoraKey === data.emisoraKey);
+    if (dupIdx >= 0) invoices[dupIdx] = data; else invoices.push(data);
+  }
   saveConsecutivo(data.numero);
 
   // Contabilizar — crear/actualizar en facturas
@@ -2167,38 +2218,51 @@ function _guardarDocumento(data, contabilizar) {
 
   delete document.getElementById('inv_id').dataset.facturaOrigen;
   saveInvoicesDB();
-  renderDocumentos(); renderFacturas(); updateBadges();
+  renderInvoices(); renderDocumentos(); renderFacturas(); updateBadges();
   closeModal('modalInvoice');
 }
 
 // ── Función principal unificada de facturación ──
+// Guard global para evitar doble tap
+let _facturacionEnProceso = false;
+
 function facturacion() {
+  // Evitar doble tap
+  if (_facturacionEnProceso) return;
+  _facturacionEnProceso = true;
+
   const data = getInvoiceData();
-  if (!data) return;
+  if (!data) {
+    _facturacionEnProceso = false;
+    return;
+  }
+
+  // Cerrar modal PRIMERO — evita que el usuario vuelva a tocar
+  closeModal('modalInvoice');
 
   const esDoc = esFinanciero(data.tipoKey);
 
-  // Si es complementario (conduce, orden) — guardar y imprimir directo sin preguntar
   if (!esDoc || !data.clienteId || data.total <= 0) {
     _guardarDocumento(data, false);
     toast('✅ Documento guardado');
     abrirEnVentana(buildInvoiceHTML(data));
+    _facturacionEnProceso = false;
     return;
   }
 
-  // Buscar si ya existe factura vinculada a este invoice por su ID
   const yaContabilizado = facturas.some(f => f.invoiceId === data.id);
 
-  // Si ya está contabilizado — actualizar y reimprimir sin preguntar
   if (yaContabilizado) {
     _guardarDocumento(data, true);
     toast('✅ Documento actualizado');
     abrirEnVentana(buildInvoiceHTML(data));
+    _facturacionEnProceso = false;
     return;
   }
 
-  // Es financiero nuevo sin contabilizar — preguntar
+  // Financiero nuevo — mostrar diálogo
   _mostrarDialogoContabilizar(data);
+  _facturacionEnProceso = false;
 }
 
 // ── Diálogo: ¿Contabilizar este documento? ──
@@ -2271,48 +2335,56 @@ function guardarInvoice() { facturacion(); }
 
 
 // ── Render tabla Documentos Primarioss (solo financieros)
-// ── Render único de todos los documentos ──
-function renderInvoices() { renderDocumentos(); } // alias
-
-function renderDocumentos() {
-  const tbody = document.getElementById('documentosTable');
-  if (!tbody) return;
-  if (!invoices.length) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin documentos aún</div><div class="empty-sub">Crea tu primer documento</div></div></td></tr>`;
+function renderInvoices() {
+  const tbody = document.getElementById('invoicesTable');
+  const fin = invoices.filter(x => esFinanciero(x.tipoKey || 'I'));
+  if (!fin.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Sin facturas ni invoices aún</div><div class="empty-sub">Crea tu primer documento financiero</div></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = [...invoices].sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(inv => {
-    const cli  = clientes.find(x => x.id === inv.clienteId);
-    const emp  = inv.emisora || empresaActual || {};
+  tbody.innerHTML = [...fin].sort((a,b)=>a.fecha<b.fecha?-1:1).map(inv => {
+    const c   = clientes.find(x => x.id === inv.clienteId);
+    const emp = inv.emisora || empresaActual || {};
     const label = inv.titulo || getTipoLabel(inv.tipoKey || 'I');
-    const esF  = esFinanciero(inv.tipoKey || 'I');
     const fVinc = facturas.find(f => f.invoiceId === inv.id);
-
-    // Badge de tipo
-    const tipoColor = esF ? 'var(--blue)' : 'var(--orange)';
-    const tipoBadge = `<span style="font-size:10px;font-weight:700;color:${tipoColor};background:${tipoColor}18;padding:2px 8px;border-radius:10px">${label}</span>`;
-
-    // Estado contable
-    let estadoHTML = '';
-    if (esF && fVinc) {
-      const saldo = getSaldo(fVinc.id);
-      const est   = getEstatus(fVinc.id);
-      const color = est === 'Pagado' ? 'var(--green)' : est === 'Pagado parcialmente' ? 'var(--orange)' : 'var(--pink)';
-      estadoHTML  = `<span style="font-size:11px;color:${color};font-weight:600">${est === 'Pagado' ? '✓ Pagado' : fmtUSD(saldo) + ' pend.'}</span>`;
-    } else if (esF && !fVinc) {
-      estadoHTML = `<span style="font-size:11px;color:var(--text2)">Sin contabilizar</span>`;
-    } else {
-      estadoHTML = `<span style="font-size:11px;color:var(--text2)">Complementario</span>`;
-    }
-
+    const saldo = fVinc ? getSaldo(fVinc.id) : null;
+    const saldoHTML = saldo !== null
+      ? `<span style="font-size:11px;color:${saldo<=0.01?'var(--green)':saldo>0?'var(--pink)':'var(--text2)'}">${saldo<=0.01?'✓ Pagado':fmtUSD(saldo)+' pendiente'}</span>`
+      : '';
     return `<tr style="cursor:pointer" onclick="editInvoice('${inv.id}')">
       <td>${fmtDate(inv.fecha)}</td>
       <td class="mono">${inv.numero}</td>
-      <td>${tipoBadge}</td>
+      <td><span style="font-size:11px;font-weight:700;color:var(--blue)">${label}</span></td>
       <td style="font-size:12px">${emp.nombre||'—'}</td>
-      <td>${cli ? cli.nombre : (inv.proveedor||'—')}</td>
-      <td class="mono">${inv.total > 0 ? fmtUSD(inv.total) : '—'}</td>
-      <td>${estadoHTML}</td>
+      <td>${c ? c.nombre : (inv.proveedor||'—')}<br>${saldoHTML}</td>
+      <td class="mono amount-pos">${fmtUSD(inv.total)}</td>
+      <td style="white-space:nowrap" onclick="event.stopPropagation()">
+        <button class="btn btn-primary btn-sm" onclick="abrirInvoicePDF(invoices.find(x=>x.id==='${inv.id}'))">📋 PDF</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Render tabla Documentos Secundarios (O, C y custom)
+function renderDocumentos() {
+  const tbody = document.getElementById('documentosTable');
+  if (!tbody) return;
+  const docs = invoices.filter(x => !esFinanciero(x.tipoKey || 'I'));
+  if (!docs.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📄</div><div class="empty-text">Sin documentos complementarios</div><div class="empty-sub">Conduces, órdenes de entrega y más</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = [...docs].sort((a,b)=>a.fecha<b.fecha?-1:1).map(inv => {
+    const c   = clientes.find(x => x.id === inv.clienteId);
+    const emp = inv.emisora || empresaActual || {};
+    const label = inv.titulo || getTipoLabel(inv.tipoKey || 'O');
+    return `<tr style="cursor:pointer" onclick="editInvoice('${inv.id}')">
+      <td>${fmtDate(inv.fecha)}</td>
+      <td class="mono">${inv.numero}</td>
+      <td><span style="font-size:11px;font-weight:700;color:var(--orange)">${label}</span></td>
+      <td style="font-size:12px">${emp.nombre||'—'}</td>
+      <td>${c ? c.nombre : (inv.proveedor||'—')}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn btn-primary btn-sm" onclick="abrirInvoicePDF(invoices.find(x=>x.id==='${inv.id}'))">📄 PDF</button>
         <button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}')">✕</button>
@@ -3342,7 +3414,8 @@ function updateBadges() {
   document.getElementById('badge-pagos').textContent=pagos.length;
   // Separar invoices financieros vs documentos complementarios
   const finTypes=['I','F'];
-  document.getElementById('badge-documentos').textContent=invoices.length;
+  document.getElementById('badge-invoices').textContent=invoices.filter(x=>esFinanciero(x.tipoKey||'I')).length;
+  document.getElementById('badge-documentos').textContent=invoices.filter(x=>!esFinanciero(x.tipoKey||'I')).length;
   document.getElementById('badge-calc').textContent=calculos.length;
   document.getElementById('badge-empresas').textContent=Object.keys(getTodasEmpresas()).length;
 }
